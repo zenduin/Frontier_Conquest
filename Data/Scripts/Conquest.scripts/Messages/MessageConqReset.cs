@@ -1,13 +1,8 @@
 ﻿namespace Conquest.scripts.Messages
 {
-    using System;
-    using System.Collections.Generic;	
-    using ConqConfig;
     using Conquest.scripts;
     using ProtoBuf;
     using Sandbox.ModAPI;
-	using VRageMath;
-	using Conquest.scripts;
 
     [ProtoContract]
     public class MessageConqReset : MessageBase

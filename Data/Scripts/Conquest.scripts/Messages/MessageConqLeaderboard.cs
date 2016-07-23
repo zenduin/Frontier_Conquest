@@ -1,14 +1,9 @@
 ﻿namespace Conquest.scripts.Messages
 {
-    using System;
-    using System.Collections.Generic;	
-    using ConqConfig;
     using Conquest.scripts;
     using ProtoBuf;
     using Sandbox.ModAPI;
-	using VRageMath;
-	using Conquest.scripts.ConqStructures;
-	using Conquest.scripts.Management;
+    using Conquest.scripts.ConqStructures;
 
     [ProtoContract]
     public class MessageConqLeaderboard : MessageBase

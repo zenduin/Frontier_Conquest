@@ -63,14 +63,17 @@
 			Config.AsteroidPoints = 1;
 			Config.PlanetSize = 25000;
 			Config.BeaconDistance = 50000;
-			Config.BaseDistance = 40000;
-			Config.ConquerDistance = 20000;
+			Config.BaseDistance = 80000;
+			Config.ConquerDistance = 40000;
 			Config.AssemblerReq = true;
 			Config.RefineryReq = true;
 			Config.CargoReq = true;
 			Config.StaticReq = true;	
 			Config.EnableLcds = true;
 			Config.UpdateFrequency = 60;
+            Config.Antenna = true;
+            Config.Persistant = false;
+            Config.Upgrades = true;
             return Config;
         }
 

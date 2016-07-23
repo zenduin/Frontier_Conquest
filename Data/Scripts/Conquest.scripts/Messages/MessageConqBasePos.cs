@@ -1,14 +1,13 @@
 ﻿namespace Conquest.scripts.Messages
 {
-    using System;
-    using System.Collections.Generic;	
-    using ConqConfig;
+    using System.Collections.Generic;
     using Conquest.scripts;
     using ProtoBuf;
     using Sandbox.ModAPI;
-	using VRageMath;
-	using Conquest.scripts.ConqStructures;
-
+    using VRageMath;
+    using Conquest.scripts.ConqStructures;
+    using VRage.ModAPI;
+    using VRage.Game.ModAPI;
     [ProtoContract]
     public class MessageConqBasePos : MessageBase
     {
@@ -40,7 +39,8 @@
 						{
 							MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Base",
 							string.Format("This is NOT a valid position to establish a conquest base as it is within safe zone: {0}", Zone.DisplayName));
-							return;
+                            ConquestScript.Instance.DataLock.ReleaseExclusive();
+                            return;
 						}
 					}
 					ConquestScript.Instance.DataLock.ReleaseExclusive();
@@ -55,9 +55,8 @@
 			bool FarEnough = true;
 			foreach (IMyCubeGrid Grid in Grids)
 			{
-				Vector3D ConquestPosition = new Vector3D();
-				string Reason = " ";
-				if (ConquestScript.Instance.IsConquestBase(Grid, ref ConquestPosition, ref Reason))
+                ConquestGrid ConqGrid = new ConquestGrid(Grid);
+				if (ConqGrid.IsValid)
 				{
 					FarEnough = false;
 					OffendingBaseName = Grid.DisplayName;

@@ -23,6 +23,8 @@
 		public int ConquerDistance { get; set; }	// Everything in this radius counts as captured by conquest base
 		
 		public int UpdateFrequency { get; set; }
+
+        public bool Antenna { get; set; }
 		
 		public bool AssemblerReq { get; set; }
 		
@@ -33,7 +35,13 @@
 		public bool StaticReq { get; set; }
 		
 		public bool EnableLcds { get; set; }
-		
 
+        public bool Persistant { get; set; }
+
+        public bool Upgrades { get; set; }
+
+        public bool Building { get; set; }		
+
+        public bool Debug { get; set; }
     }
 }

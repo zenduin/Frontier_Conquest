@@ -1,48 +1,38 @@
 ﻿namespace Conquest.scripts
 {
-	using System;
+    using System;
     using System.Collections.Generic;
     using System.Globalization;
-    using System.IO;
     using System.Linq;
-    using System.Text;
     using System.Text.RegularExpressions;
     using System.Timers;
-	
-	using Sandbox.Common;
-    using Sandbox.Common.ObjectBuilders;
-    using Sandbox.Definitions;
     using Sandbox.Game.Entities;
     using Sandbox.ModAPI;
-	
+
     using VRage;
     using VRage.Game;
     using VRage.Game.Components;
-    using VRage.Game.Entity;
     using VRage.Game.ModAPI;
     using VRage.ModAPI;
-    using VRage.ObjectBuilders;
-	using VRageMath;
-	
-	using Conquest.scripts.ConqStructures;
-	using Conquest.scripts.ConqConfig;
-	using Conquest.scripts.Management;
-	using Conquest.scripts.Messages;
-	
-	using IMyControllableEntity = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
-	
-	
-	// Hopefully these are temporary...
-	using IMyBeacon = Sandbox.ModAPI.Ingame.IMyBeacon;
-	using IMyAssembler = Sandbox.ModAPI.Ingame.IMyAssembler;
-	using IMyRefinery = Sandbox.ModAPI.Ingame.IMyRefinery;
-	using IMyCargoContainer = Sandbox.ModAPI.Ingame.IMyCargoContainer;
-	
-	[MySessionComponentDescriptor(MyUpdateOrder.AfterSimulation)]
+    using VRageMath;
+
+    using ConqStructures;
+    using ConqConfig;
+    using Management;
+    using Messages;
+
+    using IMyControllableEntity = VRage.Game.ModAPI.Interfaces.IMyControllableEntity;
+    using IMyRadioAntenna = Sandbox.ModAPI.Ingame.IMyRadioAntenna;
+    using IMyBeacon = Sandbox.ModAPI.Ingame.IMyBeacon;
+    using IMyOreDetector = Sandbox.ModAPI.Ingame.IMyOreDetector;
+    using IMyAssembler = Sandbox.ModAPI.Ingame.IMyAssembler;
+    using IMyRefinery = Sandbox.ModAPI.Ingame.IMyRefinery;
+    using IMyCargoContainer = Sandbox.ModAPI.Ingame.IMyCargoContainer;
+
+    [MySessionComponentDescriptor(MyUpdateOrder.AfterSimulation)]
 	public class ConquestScript : MySessionComponentBase
-	{
-		
-		const string ConquestConfigPattern = @"^(?<command>/conqconfig)(?:\s+(?<config>((PlanetPoints)|(MoonPoints)|(AsteroidPoints)|(PlanetSize)|(BeaconDistance)|(BaseDistance)|(ConquerDistance)|(UpdateFrequency)|(AssemblerReq)|(RefineryReq)|(CargoReq)|(StaticReq)|(Lcds)))(?:\s+(?<value>.+))?)?";
+	{		
+		const string ConquestConfigPattern = @"^(?<command>/conqconfig)(?:\s+(?<config>((PlanetPoints)|(MoonPoints)|(AsteroidPoints)|(PlanetSize)|(BeaconDistance)|(BaseDistance)|(ConquerDistance)|(UpdateFrequency)|(AssemblerReq)|(RefineryReq)|(CargoReq)|(StaticReq)|(Lcds)|(Antenna)|(Persistant)|(Upgrades)))(?:\s+(?<value>.+))?)?";
 	    const string ConquestExcludeAddPattern = @"(?<command>/conqexclude)\s+((add)|(create))\s+(?:(?:""(?<name>[^""]|.*?)"")|(?<name>[^\s]*))\s+(?<X>[+-]?((\d+(\.\d*)?)|(\.\d+)))\s+(?<Y>[+-]?((\d+(\.\d*)?)|(\.\d+)))\s+(?<Z>[+-]?((\d+(\.\d*)?)|(\.\d+)))\s+(?<Size>(\d+(\.\d*)?))";
         const string ConquestExcludeDeletePattern = @"(?<command>/conqexclude)\s+((del)|(delete)|(remove))\s+(?:(?:""(?<name>[^""]|.*?)"")|(?<name>.*))";
 		
@@ -56,10 +46,9 @@
         private bool _timer1Block;	
 		private bool _timer30Block;
         private bool _UpdateTimerBlock;
-		//private double Milliseconds;
 		private DateTime NextRun;
 
-	    private readonly Action<byte[]> _messageHandler = new Action<byte[]>(HandleMessage);	
+	    private readonly Action<byte[]> _messageHandler = new Action<byte[]>(HandleMessage);
 		
 		public static ConquestScript Instance;
 
@@ -70,8 +59,6 @@
 		public ConqConfigStruct Config;
 		
 		public FastResourceLock DataLock = new FastResourceLock();
-
-
 
         #region attaching events and wiring up
 		
@@ -95,13 +82,11 @@
                 && MyAPIGateway.Session != null && MyAPIGateway.Utilities.IsDedicated && MyAPIGateway.Multiplayer.IsServer)
             {
                 InitServer();
-                return;
             }
 			
             base.UpdateAfterSimulation();
 		}
-		
-		private void InitClient()
+        private void InitClient()
 		{
 			_isInitialized = true; // Set this first to block any other calls from UpdateAfterSimulation().
 			_isClientRegistered = true;
@@ -123,7 +108,8 @@
 
 		public void ResetData()
 		{
-			List<ConquestFaction> NewFactions = new List<ConquestFaction>();
+            if (Config.Debug) ServerLogger.WriteStart("ResetData Called");
+            List<ConquestFaction> NewFactions = new List<ConquestFaction>();
 			List<ConquestBase> NewBases = new List<ConquestBase>();
 			DataLock.AcquireExclusive();
 				Data.ConquestFactions = NewFactions;
@@ -134,78 +120,74 @@
 			_FirstRunTimer.Interval = 1;
 			_FirstRunTimer.Start();
 		}
-		private void InitServer()
-		{
-			_isInitialized = true; // Set this first to block any other calls from UpdateAfterSimulation().
-			_isServerRegistered = true;
-			ServerLogger.Init("ConquestServer.Log", false, 0); // comment this out if logging is not required for the Server.
-			ServerLogger.WriteStart("Conquest Server Log Started");
-			ServerLogger.WriteInfo("Conquest Server Version {0}", ConquestConsts.ModCommunicationVersion);
-			if (ServerLogger.IsActive)
-				VRage.Utils.MyLog.Default.WriteLine(String.Format("##Mod## Conquest Server Logging File: {0}", ServerLogger.LogFile));
+        private void InitServer()
+        {
+            _isInitialized = true; // Set this first to block any other calls from UpdateAfterSimulation().
+            _isServerRegistered = true;
+            ServerLogger.Init("ConquestServer.Log", false, 0); // comment this out if logging is not required for the Server.
+            ServerLogger.WriteStart("Conquest Server Log Started");
+            ServerLogger.WriteInfo("Conquest Server Version {0}", ConquestConsts.ModCommunicationVersion);
+            if (ServerLogger.IsActive)
+                VRage.Utils.MyLog.Default.WriteLine(String.Format("##Mod## Conquest Server Logging File: {0}", ServerLogger.LogFile));
 
-			ServerLogger.WriteStart("RegisterMessageHandler");
-			MyAPIGateway.Multiplayer.RegisterMessageHandler(ConquestConsts.ConnectionId, _messageHandler);
+            ServerLogger.WriteStart("RegisterMessageHandler");
+            MyAPIGateway.Multiplayer.RegisterMessageHandler(ConquestConsts.ConnectionId, _messageHandler);
 
-			Config = ConqDataManager.LoadConfig();
-			Data = ConqDataManager.LoadData();
+            Config = ConqDataManager.LoadConfig();
+            Data = ConqDataManager.LoadData();
 
 
-			// start the timer last, as all data should be loaded before this point.
-			_UpdateTimer = new Timer(Config.UpdateFrequency*60000);
-			_UpdateTimer.Elapsed += UpdateTimerEventsOnElapsed;
+            // start the timer last, as all data should be loaded before this point.
             ServerLogger.WriteStart("Attaching Event 1 timer.");
             _timer1Events = new Timer(1000);
             _timer1Events.Elapsed += Timer1EventsOnElapsed;
             _timer1Events.Start();
-			ServerLogger.WriteStart("Attaching Event 30 timer.");
+            ServerLogger.WriteStart("Attaching Event 30 timer.");
             _timer30Events = new Timer(30000);
             _timer30Events.Elapsed += Timer30EventsOnElapsed;
             _timer30Events.Start();
-			try
-			{
-				NextRun = Data.LastRun.AddMinutes(Config.UpdateFrequency);
+            _UpdateTimer = new Timer(Config.UpdateFrequency * 60000);
+            _UpdateTimer.Elapsed += UpdateTimerEventsOnElapsed;
+            try
+            {
+                NextRun = Data.LastRun.AddMinutes(Config.UpdateFrequency);
 
-				//Milliseconds = (NextRun-MyAPIGateway.Session.GameDateTime).TotalMilliseconds;		
-				_FirstRunTimer = new Timer((NextRun-MyAPIGateway.Session.GameDateTime).TotalMilliseconds);					
-				ServerLogger.WriteStart(string.Format("Current game time is {0}. Last scan was at {1}. Scheduling first scan for {2} (in {3}).", MyAPIGateway.Session.GameDateTime, Data.LastRun, NextRun, (NextRun-MyAPIGateway.Session.GameDateTime).ToString()));
+                //Milliseconds = (NextRun-MyAPIGateway.Session.GameDateTime).TotalMilliseconds;		
+                _FirstRunTimer = new Timer((NextRun - MyAPIGateway.Session.GameDateTime).TotalMilliseconds);
+                ServerLogger.WriteStart(string.Format("Current game time is {0}. Last scan was at {1}. Scheduling first scan for {2} (in {3}).", MyAPIGateway.Session.GameDateTime, Data.LastRun, NextRun, (NextRun - MyAPIGateway.Session.GameDateTime).ToString()));
 
-			}
-			catch
-			{
-				ServerLogger.WriteStart(string.Format("Error setting next scan time, defaulting to {0} minutes from now. Last run: {1}", Config.UpdateFrequency, Data.LastRun));
-				_FirstRunTimer = new Timer(Config.UpdateFrequency*60000);
-			}
-			_FirstRunTimer.Elapsed += FirstRunTimerEventsOnElapsed;
-			_FirstRunTimer.AutoReset = false;
-			_FirstRunTimer.Start();			
-		}
-		#endregion attaching events and wiring up
-	
+            }
+            catch
+            {
+                ServerLogger.WriteStart(string.Format("Error setting next scan time, defaulting to {0} minutes from now. Last run: {1}", Config.UpdateFrequency, Data.LastRun));
+                _FirstRunTimer = new Timer(Config.UpdateFrequency * 60000);
+            }
+            _FirstRunTimer.Elapsed += FirstRunTimerEventsOnElapsed;
+            _FirstRunTimer.AutoReset = false;
+            _FirstRunTimer.Start();
+        }
+        #endregion attaching events and wiring up
+
         #region detaching events
 
         protected override void UnloadData()
         {
             ClientLogger.WriteStop("UnloadData");
             ServerLogger.WriteStop("UnloadData");
-
             if (_isClientRegistered)
             {
                 if (MyAPIGateway.Utilities != null)
                 {
 					MyAPIGateway.Utilities.MessageEntered -= GotMessage;
                 }
-
                 if (!_isServerRegistered) // if not the server, also need to unregister the messagehandler.
                 {
                     ClientLogger.WriteStop("UnregisterMessageHandler");
                     MyAPIGateway.Multiplayer.UnregisterMessageHandler(ConquestConsts.ConnectionId, _messageHandler);
                 }
-
                 ClientLogger.WriteStop("Log Closed");
                 ClientLogger.Terminate();
             }
-
             if (_isServerRegistered)
             {
                 ServerLogger.WriteStop("UnregisterMessageHandler");
@@ -244,13 +226,10 @@
                     _FirstRunTimer.Close();
                     _FirstRunTimer = null;
 				}
-
                 Data = null;
-
                 ServerLogger.WriteStop("Log Closed");
                 ServerLogger.Terminate();
             }
-
             base.UnloadData();
         }
 
@@ -261,23 +240,20 @@
 
             if (_isServerRegistered)
             {
-				DataLock.AcquireExclusive();
-					if (Data != null)
-					{
-						ServerLogger.WriteInfo("Save Data Started");
-						ConqDataManager.SaveData(Data);
-						ServerLogger.WriteInfo("Save Data End");
-					}
-				DataLock.ReleaseExclusive();
+				if (Data != null && DataLock.TryAcquireExclusive())
+                {
+                    ServerLogger.WriteInfo("Save Data Started");
+                    ConqDataManager.SaveData(Data);
+                    ServerLogger.WriteInfo("Save Data End");
+                    DataLock.ReleaseExclusive();
+                }
 				if (Config != null)
                 {
                     ServerLogger.WriteInfo("Save Config Started");
                     ConqDataManager.SaveConfig(Config);
                     ServerLogger.WriteInfo("Save Config End");
                 }
-
 			}
-
             base.SaveData();
         }
 
@@ -317,6 +293,7 @@
 		
 		private void Timer1EventsOnElapsed(object sender, ElapsedEventArgs elapsedEventArgs)
         {
+
             MyAPIGateway.Utilities.InvokeOnGameThread(delegate
             {
                 // Recheck main Gateway properties, as the Game world my be currently shutting down when the InvokeOnGameThread is called.
@@ -325,15 +302,15 @@
 
                 if (_timer1Block) // prevent other any additional calls into this code while it may still be running.
                     return;
-		
-				if (DataLock.TryAcquireExclusive())
-				{
-					_timer1Block = true;
-					LcdManager.UpdateLcds();		
-					DataLock.ReleaseExclusive();
-					_timer1Block = false;
-				}        
-            });
+
+                if (DataLock.TryAcquireExclusive())
+                {
+                    _timer1Block = true;
+                    LcdManager.UpdateLcds();
+                    DataLock.ReleaseExclusive();
+                    _timer1Block = false;
+                }
+            });            
         }
 		
         private void UpdateTimerEventsOnElapsed(object sender, ElapsedEventArgs elapsedEventArgs)
@@ -365,154 +342,31 @@
 			MyAPIGateway.Parallel.Start(delegate ()
             // Background processing occurs within this block.
             {		
-				List<ConquestBase> ValidBases = new List<ConquestBase>();
-				List<Vector3D> ValidBasePositions = new List<Vector3D>();
-				ServerLogger.WriteStart("Begin Background Grid Scanning");
-				foreach (IMyCubeGrid Grid in Grids)
-				{
-					Vector3D TempPosition = new Vector3D();
-					//MyAPIGateway.Utilities.ShowMessage("IMyCubeGrid: ", Grid.DisplayName + " " + IsConquestBase(Grid, ref TempPosition).ToString());
-					Vector3D ConquestPosition = new Vector3D();
-					string Reason = " ";
-					if (!TempData.ConquestBases.Exists(x => x.EntityId == Grid.EntityId) && IsConquestBase(Grid, ref ConquestPosition, ref Reason)) // This EntityId is not already in the list of ConquestBases, but it should be
-					{
-						ServerLogger.WriteStart("New Base " + Grid.DisplayName);
-						BoundingSphereD Sphere = new BoundingSphereD(ConquestPosition, Config.ConquerDistance);
-						List<IMyEntity> Entities = TempEntities.GetEntitiesInSphere(ref Sphere);
-						int PlanetCount = 0;
-						int AsteroidCount = 0;
-						int MoonCount = 0;
-						foreach (IMyEntity Entity in Entities)
-						{
-							if (Entity is MyPlanet) 
-							{
-								MyPlanet Planet = Entity as MyPlanet;
-								if ((Planet.AverageRadius >= Config.PlanetSize) && (Config.PlanetPoints > 0)) {
-									PlanetCount++;
-								}
-								else if (Config.MoonPoints > 0)
-								{
-									MoonCount++;
-								}	
-
-							}
-							else if (Entity is MyVoxelMap)
-							{
-								AsteroidCount++;
-							}
-							//MyAPIGateway.Utilities.ShowMessage("entitylist", Entity.GetType().ToString());
-						}
-						//Bases cannot get points from multiple categories...
-						if (PlanetCount > 0)
-						{
-							AsteroidCount = 0;
-							MoonCount = 0;
-						} else if (MoonCount > 0)
-						{
-							AsteroidCount = 0;
-						}
-						ConquestBase NewBase = new ConquestBase();
-						NewBase.DisplayName = Grid.DisplayName;
-						NewBase.EntityId = Grid.EntityId;
-						NewBase.FactionId = TempFactions.TryGetPlayerFaction(Grid.BigOwners[0]).FactionId;
-						NewBase.Planets = PlanetCount;
-						NewBase.Moons = MoonCount;
-						NewBase.Asteroids = AsteroidCount;
-						NewBase.Position = ConquestPosition;
-						NewBase.IsValid = false;
-						ValidBases.Add(NewBase);
-						ValidBasePositions.Add(ConquestPosition);
-					}						
-				}
+				if (Config.Debug) ServerLogger.WriteStart("Looking for valid bases to assign points");
 				foreach (ConquestBase Base in TempData.ConquestBases)
 				{
-					Vector3D BasePosition = new Vector3D();
-					try
+					if (Base.IsValid && Base.IsValidPoints) 
 					{
-						IMyCubeGrid Grid = (TempEntities.GetEntityById(Base.EntityId) as IMyCubeGrid);
-						string Reason = " ";
-						if (IsConquestBase(Grid, ref BasePosition, ref Reason))
-						{
-							ConquestBase CurrentBase = Base;
-							//ServerLogger.WriteStart("Existing Base " + Grid.DisplayName);
-							if (Base.Position == BasePosition) // This conquest base (beacon) has not moved...
-							{
-								//ServerLogger.WriteStart(Grid.DisplayName + " Position has not changed.");
-								CurrentBase.IsValid = true;
-								//ServerLogger.WriteStart("Current Base IsValid");
-								IMyFaction Faction;
-								try 
-								{
-									Faction = TempFactions.TryGetPlayerFaction(Grid.BigOwners[0]);
-									CurrentBase.FactionId = Faction.FactionId;
-									//ServerLogger.WriteStart("Retrieved Faction by Id");
-								}
-								catch
-								{
-									ServerLogger.WriteStart("Error: Could not retrieve Faction by Id");
-								}
-								CurrentBase.DisplayName = Grid.DisplayName;
-								ValidBases.Add(CurrentBase);
-								ValidBasePositions.Add(BasePosition);
-							} else {
-								//ServerLogger.WriteStart(Grid.DisplayName + " Position has changed.");
-							}
-						}
-					}
-					catch
-					{
-						continue;
-					}
+                        ConquestFaction Faction = TempData.ConquestFactions.Find(x => x.FactionId == Base.FactionId);
+                        int InitialPoints = Faction.VictoryPoints;
+                        int NewPoints = ((Base.Asteroids * Config.AsteroidPoints) + (Base.Moons * Config.MoonPoints) + (Base.Planets * Config.PlanetPoints));
+                        Faction.VictoryPoints += NewPoints;
+                        ServerLogger.WriteStart("Assigned " + NewPoints + " points for valid base " + Base.DisplayName);
+                        Base.IsValidPoints = true;
+                    }
+                    else if (Base.IsValid)
+                    {
+                        Base.IsValidPoints = true;
+                    }
 				}
-				for (int i=0;i<TempData.ConquestBases.Count;i++)
-				{
-					foreach (Vector3D Position in ValidBasePositions)
-					{
-						if ((TempData.ConquestBases[i].Position != Position) && (Vector3D.Distance(TempData.ConquestBases[i].Position, Position) < Config.BaseDistance))
-						{
-							TempData.ConquestBases[i].IsValid = false;
-							break;
-						}
-					}
-					foreach (ConquestExclusionZone ExclusionZone in TempData.ConquestExclusions)
-					{
-						if ((Vector3D.Distance(TempData.ConquestBases[i].Position, ExclusionZone.Position) < ExclusionZone.Radius))
-						{
-							TempData.ConquestBases[i].IsValid = false;
-							break;
-						}
-					}
-				}
-				//ServerLogger.WriteStart("Looking for valid bases to assign points");
-				foreach (ConquestBase Base in ValidBases)
-				{
-					if (Base.IsValid == true) 
-					{
-						try 
-						{
-							ConquestFaction Faction = TempData.ConquestFactions.Find(x => x.FactionId == Base.FactionId);
-							int InitialPoints = Faction.VictoryPoints;
-							int NewPoints = ((Base.Asteroids * Config.AsteroidPoints) + (Base.Moons*Config.MoonPoints) + (Base.Planets*Config.PlanetPoints));
-							Faction.VictoryPoints += NewPoints;
-							ServerLogger.WriteStart("Assigned " + NewPoints + " points for valid base " + Base.DisplayName);
-						}
-						catch
-						{
-							continue;
-						}
-					}
-				}
-				TempData.ConquestBases = new List<ConquestBase>(ValidBases);
-				//ServerLogger.WriteStart("Finished assigning points.");
-				//ServerLogger.WriteStart("Sorting conquest factions by their victorypoints");
+				ServerLogger.WriteStart("Finished assigning points.");
 				TempData.ConquestFactions.Sort(CompareFaction);
-				//ServerLogger.WriteStart("Acquiring Data Lock. END");
+                if (Config.Debug) ServerLogger.WriteStart("Acquiring Data Lock. END");
 				DataLock.AcquireExclusive();
 					Data = TempData;  
 				DataLock.ReleaseExclusive();
-				//ServerLogger.WriteStart("Released Data Lock. END");
+                if (Config.Debug) ServerLogger.WriteStart("Released Data Lock. END");
 				_UpdateTimerBlock = false;	
-				ServerLogger.WriteStart("Finished with conquest base scan.");
             });
         }
 
@@ -532,37 +386,38 @@
 			IMyEntities TempEntities = MyAPIGateway.Entities;
 			HashSet<IMyEntity> Grids = new HashSet<IMyEntity>();
 			MyAPIGateway.Entities.GetEntities(Grids, x => x is IMyCubeGrid);
-				
-			//ServerLogger.WriteStart("Acquire Data Lock. START");	
+
+            if (Config.Debug) ServerLogger.WriteStart("Acquire Data Lock. START");	
 			DataLock.AcquireExclusive();
 				ConqDataStruct TempData = Data;		
-			DataLock.ReleaseExclusive();		
-			//ServerLogger.WriteStart("Released Data Lock. START");
+			DataLock.ReleaseExclusive();
+            if (Config.Debug) ServerLogger.WriteStart("Released Data Lock. START");
 			
 			MyAPIGateway.Parallel.Start(delegate ()
             // Background processing occurs within this block.
-            {		
-
-				//ServerLogger.WriteStart("Updating Factions");
+            {
+                if (Config.Debug) ServerLogger.WriteStart("Updating Factions");
 				List<ConquestFaction> ValidFactions = new List<ConquestFaction>();
 				foreach (MyObjectBuilder_Faction FactionBuilder in FactionCollection.Factions)
 				{
-					bool NewFaction = true;
 					Int64 FactionId = FactionBuilder.FactionId;
 					IMyFaction Faction = TempFactions.TryGetFactionById(FactionId);
 					if (!Faction.IsEveryoneNpc()) 
 					{
-						bool NewBase = true;
+						bool NewFaction = true;
 						foreach (ConquestFaction ConqFaction in TempData.ConquestFactions)
 						{
 							if (ConqFaction.FactionId == FactionId)
 							{
-								NewBase = false;
+								NewFaction = false;
+                                // update Faction Tags and names since these can change!
+                                ConqFaction.FactionTag = FactionBuilder.Tag;
+                                ConqFaction.FactionName = FactionBuilder.Name;
 								ValidFactions.Add(ConqFaction);
 								break;
 							}
 						}
-						if (NewBase)
+						if (NewFaction)
 						{
 							ConquestFaction ConqFaction = new ConquestFaction();
 							ConqFaction.FactionId = FactionId;
@@ -573,80 +428,99 @@
 					}
 				}
 				
-				//foreach (ConquestFaction Faction in Temp)
 				List<Vector3D> ValidBasePositions = new List<Vector3D>();
 				List<ConquestBase> ValidBases = new List<ConquestBase>();
-				//ServerLogger.WriteStart("Begin Background Grid Scanning (not for points)");
+                if (Config.Debug) ServerLogger.WriteStart("Begin Background Grid Scanning (not for points)");
 				foreach (IMyCubeGrid Grid in Grids)
 				{
-					Vector3D TempPosition = new Vector3D();
+                    ConquestGrid ConqGrid = new ConquestGrid(Grid);
 					//MyAPIGateway.Utilities.ShowMessage("IMyCubeGrid: ", Grid.DisplayName + " " + IsConquestBase(Grid, ref TempPosition).ToString());
-					Vector3D ConquestPosition = new Vector3D();
-					string Reason = " ";
-					if (IsConquestBase(Grid, ref ConquestPosition, ref Reason))
-					{
-						BoundingSphereD Sphere = new BoundingSphereD(ConquestPosition, Config.ConquerDistance);
-						List<IMyEntity> Entities = TempEntities.GetEntitiesInSphere(ref Sphere);
-						int PlanetCount = 0;
-						int AsteroidCount = 0;
-						int MoonCount = 0;
-						foreach (IMyEntity Entity in Entities)
-						{
-							if (Entity is MyPlanet) 
-							{
-								MyPlanet Planet = Entity as MyPlanet;
-								if (Planet.AverageRadius >= Config.PlanetSize) {
-									PlanetCount++;
-								}
-								else
-								{
-									MoonCount++;
-								}	
+                    bool IsNewBase = true;
+                    foreach (ConquestBase Base in TempData.ConquestBases)
+                    {
+                        if (Grid.EntityId == Base.EntityId)
+                        {
+                            if (ConqGrid.IsValid && (ConqGrid.Position == Base.Position))
+                            {
+                                Base.IsValid = true;
+                                ValidBases.Add(Base);
+                                ValidBasePositions.Add(Base.Position);
+                                IsNewBase = false;
+                                break;
+                            }
+                            else 
+                            {
+                                if (ConqGrid.Position != Base.Position)
+                                {
+                                    Base.Position = ConqGrid.Position;
+                                    Base.IsValidPoints = false;
+                                }
+                            }
+                        }
+                    }
+                    if (IsNewBase && ConqGrid.IsValid)
+                    {
+                        BoundingSphereD Sphere = new BoundingSphereD(ConqGrid.Position, Config.ConquerDistance);
+                        List<IMyEntity> Entities = TempEntities.GetEntitiesInSphere(ref Sphere);
+                        int PlanetCount = 0;
+                        int AsteroidCount = 0;
+                        int MoonCount = 0;
+                        foreach (IMyEntity Entity in Entities)
+                        {
+                            if (Entity is MyPlanet)
+                            {
+                                MyPlanet Planet = Entity as MyPlanet;
+                                if (Planet.AverageRadius >= Config.PlanetSize)
+                                {
+                                    PlanetCount++;
+                                }
+                                else
+                                {
+                                    MoonCount++;
+                                }
 
-							}
-							else if (Entity is MyVoxelMap)
-							{
-								AsteroidCount++;
-							}
-						}
-						//Bases cannot get points from multiple categories...
-						if (PlanetCount > 0)
-						{
-							AsteroidCount = 0;
-							MoonCount = 0;
-						} else if (MoonCount > 0)
-						{
-							AsteroidCount = 0;
-						}
-						ConquestBase NewBase = new ConquestBase();
-						NewBase.DisplayName = Grid.DisplayName;
-						NewBase.EntityId = Grid.EntityId;
-						NewBase.FactionId = TempFactions.TryGetPlayerFaction(Grid.BigOwners[0]).FactionId;
-						NewBase.Planets = PlanetCount;
-						NewBase.Moons = MoonCount;
-						NewBase.Asteroids = AsteroidCount;
-						NewBase.Position = ConquestPosition;
-						NewBase.IsValid = true;
-						ValidBases.Add(NewBase);
-						ValidBasePositions.Add(ConquestPosition);
-					}						
-				}
-			
-				//ServerLogger.WriteStart("Resetting faction base counts...");
+                            }
+                            else if (Entity is MyVoxelMap)
+                            {
+                                AsteroidCount++;
+                            }
+                        }
+                        //Don't count rocks on planets and moons as asteroids
+                        if (PlanetCount > 0 || MoonCount > 0)
+                        {
+                            AsteroidCount = 0;
+                        }
+                        ConquestBase NewBase = new ConquestBase();
+                        NewBase.DisplayName = Grid.DisplayName;
+                        NewBase.EntityId = Grid.EntityId;
+                        NewBase.FactionId = TempFactions.TryGetPlayerFaction(Grid.BigOwners[0]).FactionId;
+                        NewBase.Planets = PlanetCount;
+                        NewBase.Moons = MoonCount;
+                        NewBase.Asteroids = AsteroidCount;
+                        NewBase.Position = ConqGrid.Position;
+                        NewBase.IsValid = true;
+                        ValidBases.Add(NewBase);
+                        ValidBasePositions.Add(ConqGrid.Position);
+                    }
+                }
+
+                if (Config.Debug) ServerLogger.WriteStart("Resetting faction base counts...");
 				foreach (ConquestFaction Faction in ValidFactions) 
 				{
 					Faction.PlanetBases = 0;
 					Faction.MoonBases = 0;
 					Faction.AsteroidBases = 0;
+                    if (Config.Persistant)
+                        Faction.VictoryPoints = 0;
 				}
-				//ServerLogger.WriteStart("Grid Scanning Finished, Checking that bases are far enough apart...");
+                if (Config.Debug) ServerLogger.WriteStart("Grid Scanning Finished, Checking that bases are far enough apart...");
 				for (int i=0;i<ValidBases.Count;i++)
 				{
 					foreach (Vector3D Position in ValidBasePositions)
 					{
 						if ((ValidBases[i].Position != Position) && (Vector3D.Distance(ValidBases[i].Position, Position) < Config.BaseDistance))
 						{
-							ValidBases[i].IsValid = false;
+                            ValidBases[i].IsValid = false;
 							break;
 						}
 					}
@@ -654,7 +528,7 @@
 					{
 						if ((Vector3D.Distance(ValidBases[i].Position, ExclusionZone.Position) < ExclusionZone.Radius))
 						{
-							ValidBases[i].IsValid = false;
+                            ValidBases[i].IsValid = false;
 							break;
 						}
 					}
@@ -678,6 +552,12 @@
 							{
 								Faction.AsteroidBases += 1;
 							}
+                            // set total points to current point value held if in persistant mode
+                            if (Config.Persistant)
+                            {
+                                int NewPoints = ((Base.Asteroids * Config.AsteroidPoints) + (Base.Moons * Config.MoonPoints) + (Base.Planets * Config.PlanetPoints));
+                                Faction.VictoryPoints += NewPoints;                                
+                            }
 						}
 						catch
 						{
@@ -685,8 +565,10 @@
 						}
 					}
 				}
-				DataLock.AcquireExclusive();
-					Data.ConquestFactions = ValidFactions;  
+                ValidFactions.Sort(CompareFaction);
+                DataLock.AcquireExclusive();
+					Data.ConquestFactions = ValidFactions;
+                    Data.ConquestBases = ValidBases;
 				DataLock.ReleaseExclusive();
 				_timer30Block = false;	
             });
@@ -805,7 +687,6 @@
                 }
                 else
                 {
-                    string helpreply = "."; //this reply is too big need to move it to pop up \r\n
                     switch (split[1].ToLowerInvariant())
                     {
                         // did we type /chelp help ?
@@ -862,110 +743,7 @@
             return false;
         }
         #endregion command list
-
-		public bool IsConquestBase(IMyCubeGrid Grid, ref Vector3D ConquestPosition, ref string Reason) 
-		{
-			bool ConquestBeacon = false;
-			bool ConquestAssembler = false;
-			bool ConquestRefinery = false;
-			bool ConquestCargo = false;
-			Int64 OwnerFaction;
-			try 
-			{
-				IMyFaction Faction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(Grid.BigOwners[0]);
-				if (Faction.IsEveryoneNpc())
-				{
-					Reason += "\nGrid does not belong to a player faction.";
-					return false;
-				}
-				OwnerFaction = Faction.FactionId;
-			} 
-			catch 
-			{
-				Reason += "\nCould not determine owner or owner's faction.";
-				return false;
-			}
-			// Check that this grid is a station (consequently not small grid) OR that static grid isnt required to be conquest base
-			if (Grid.IsStatic || !Config.StaticReq) 
-			{				
-				List<IMySlimBlock> SlimBlocks = new List<IMySlimBlock>();
-				Grid.GetBlocks(SlimBlocks);
-				foreach (IMySlimBlock SlimBlock in SlimBlocks) 
-				{
-					try
-					{
-						IMyCubeBlock FatBlock = SlimBlock.FatBlock;
-						if (FatBlock is IMyBeacon) 
-						{
-							IMyBeacon Beacon = FatBlock as IMyBeacon;
-							if ((Beacon.Radius >= Config.BeaconDistance) && (Beacon.IsWorking))
-							{
-								ConquestBeacon = true;
-								ConquestPosition = FatBlock.GetPosition();
-								try 
-								{
-									if (OwnerFaction != MyAPIGateway.Session.Factions.TryGetPlayerFaction(Beacon.OwnerId).FactionId)
-									{
-										Reason += "\nBeacon owner must be the same as the majority owner of grid.";
-										return false;
-									}
-								}
-								catch
-								{
-									Reason += "\nCould not determine owner or owner's faction.";
-									return false;
-								}
-							}
-						} else if ((FatBlock is IMyAssembler) && FatBlock.IsFunctional)
-						{
-							ConquestAssembler = true;
-						} else if ((FatBlock is IMyRefinery) && FatBlock.IsFunctional)
-						{
-							ConquestRefinery = true;
-						} else if ((FatBlock is IMyCargoContainer) && FatBlock.IsFunctional)
-						{
-							ConquestCargo = true;
-						}
-					}
-					catch (Exception ex)
-					{
-						ClientLogger.WriteException(ex);
-						MyAPIGateway.Utilities.ShowMessage("Error", "An exception has been logged in the file: {0}" + ClientLogger.LogFileName);
-					}
-				}
-			}
-			else
-			{
-				Reason += "\nGrid must be static.";
-				return false;				
-			}
-			
-			if (ConquestBeacon && (ConquestAssembler || !Config.AssemblerReq) && (ConquestRefinery || !Config.RefineryReq) && (ConquestCargo || !Config.CargoReq))
-			{	
-				return true;
-			} 
-			else 
-			{
-				if (!ConquestBeacon)
-				{
-					Reason += "\nGrid must contain beacon broadcasting at " + Config.BeaconDistance + "m or more.";
-				}
-				if (!ConquestAssembler && Config.AssemblerReq)
-				{
-					Reason += "\nGrid must contain a functional assembler.";
-				}
-				if (!ConquestRefinery && Config.RefineryReq)
-				{
-					Reason += "\nGrid must contain a functional refinery.";
-				}
-				if (!ConquestCargo && Config.CargoReq)
-				{
-					Reason += "\nGrid must contain a functional cargo container.";
-				}
-				return false;
-			}	
-		}
-		
+	
 		
 		public static int CompareFaction(ConquestFaction A, ConquestFaction B)
 		{
@@ -1123,4 +901,160 @@
         }
 		
 	}
+    public class ConquestGrid
+    {
+        public bool IsValid;
+        IMyCubeGrid Grid;
+        public Vector3D Position;
+        public float Radius;
+        public List<string> Reasons = new List<string>();
+        public ConquestGrid(IMyCubeGrid grid)
+        {
+            Grid = grid;
+            IsValid = IsConquest();
+        }
+        private bool IsConquest()
+        {
+            bool ConquestBeacon = false;
+            bool ConquestAntenna = false;
+            bool ConquestAssembler = false;
+            bool ConquestRefinery = false;
+            bool ConquestCargo = false;
+            long OwnerFaction;
+            try
+            {
+                IMyFaction Faction = MyAPIGateway.Session.Factions.TryGetPlayerFaction(Grid.BigOwners[0]);
+                if (Faction.IsEveryoneNpc())
+                {
+                    Reasons.Add("Grid does not belong to a player faction.");
+                    return false;
+                }
+                OwnerFaction = Faction.FactionId;
+            }
+            catch
+            {
+                Reasons.Add("Could not determine owner or owner's faction (check ownership).");
+                return false;
+            }
+            // Check that this grid is a station (consequently not small grid) OR that static grid isnt required to be conquest base
+            if (Grid.IsStatic || !ConquestScript.Instance.Config.StaticReq)
+            {
+                List<IMySlimBlock> SlimBlocks = new List<IMySlimBlock>();
+
+                Grid.GetBlocks(SlimBlocks);
+                foreach (IMySlimBlock SlimBlock in SlimBlocks)
+                {
+                    try
+                    {
+                        IMyCubeBlock FatBlock = SlimBlock.FatBlock;
+                        if (ConquestScript.Instance.Config.Antenna && FatBlock is IMyRadioAntenna)
+                        {
+                            IMyRadioAntenna Antenna = FatBlock as IMyRadioAntenna;
+                            if ((Antenna.Radius >= ConquestScript.Instance.Config.BeaconDistance) && (Antenna.IsWorking) && (Antenna.IsBroadcasting))
+                            {
+                                if (Antenna.Radius > Radius)
+                                {
+                                    Position = FatBlock.GetPosition();
+                                    Radius = Antenna.Radius;
+                                    ConquestAntenna = true;
+                                    ConquestBeacon = false;
+                                }                                 
+                                try
+                                {
+                                    if (OwnerFaction != MyAPIGateway.Session.Factions.TryGetPlayerFaction(Antenna.OwnerId).FactionId)
+                                    {
+                                        Reasons.Add("Antenna owner must be the same as the majority owner of grid.");
+                                        return false;
+                                    }
+                                }
+                                catch
+                                {
+                                    Reasons.Add("Could not determine owner or owner's faction.");
+                                    return false;
+                                }
+                            }
+                        }
+                        else if (FatBlock is IMyBeacon)
+                        {
+                            IMyBeacon Beacon = FatBlock as IMyBeacon;
+                            if ((Beacon.Radius >= ConquestScript.Instance.Config.BeaconDistance) && (Beacon.IsWorking))
+                            {
+                                if (Beacon.Radius > Radius)
+                                {
+                                    Position = FatBlock.GetPosition();
+                                    Radius = Beacon.Radius;
+                                    ConquestAntenna = false;
+                                    ConquestBeacon = true;
+                                }
+                                try
+                                {
+                                    if (OwnerFaction != MyAPIGateway.Session.Factions.TryGetPlayerFaction(Beacon.OwnerId).FactionId)
+                                    {
+                                        Reasons.Add("Beacon owner must be the same as the majority owner of grid.");
+                                        return false;
+                                    }
+                                }
+                                catch
+                                {
+                                    Reasons.Add("Could not determine owner or owner's faction.");
+                                    return false;
+                                }
+                            }
+                        }                        
+                        else if ((FatBlock is IMyAssembler) && FatBlock.IsFunctional)
+                        {
+                            ConquestAssembler = true;
+                        }
+                        else if ((FatBlock is IMyRefinery) && FatBlock.IsFunctional)
+                        {
+                            ConquestRefinery = true;
+                        }
+                        else if ((FatBlock is IMyCargoContainer) && FatBlock.IsFunctional)
+                        {
+                            ConquestCargo = true;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        ConquestScript.Instance.ClientLogger.WriteException(ex);
+                        MyAPIGateway.Utilities.ShowMessage("Error", "An exception has been logged in the file: {0}" + ConquestScript.Instance.ClientLogger.LogFileName);
+                    }
+                }
+            }
+            else
+            {
+                Reasons.Add("Grid must be static.");
+                return false;
+            }
+
+            if ((ConquestBeacon || ConquestAntenna) && (ConquestAssembler || !ConquestScript.Instance.Config.AssemblerReq) && (ConquestRefinery || !ConquestScript.Instance.Config.RefineryReq) && (ConquestCargo || !ConquestScript.Instance.Config.CargoReq))
+            {
+                return true;
+            }
+            else
+            {
+                if (!ConquestBeacon && !ConquestScript.Instance.Config.Antenna)
+                {
+                    Reasons.Add("Grid must contain beacon broadcasting at " + ConquestScript.Instance.Config.BeaconDistance + "m or more.");
+                }
+                if (!ConquestBeacon && !ConquestAntenna && ConquestScript.Instance.Config.Antenna)
+                {
+                    Reasons.Add("Grid must contain beacon or antenna broadcasting at " + ConquestScript.Instance.Config.BeaconDistance + "m or more.");
+                }
+                if (!ConquestAssembler && ConquestScript.Instance.Config.AssemblerReq)
+                {
+                    Reasons.Add("Grid must contain a functional assembler.");
+                }
+                if (!ConquestRefinery && ConquestScript.Instance.Config.RefineryReq)
+                {
+                    Reasons.Add("Grid must contain a functional refinery.");
+                }
+                if (!ConquestCargo && ConquestScript.Instance.Config.CargoReq)
+                {
+                    Reasons.Add("Grid must contain a functional cargo container.");
+                }
+                return false;
+            }
+        }
+    }
 }

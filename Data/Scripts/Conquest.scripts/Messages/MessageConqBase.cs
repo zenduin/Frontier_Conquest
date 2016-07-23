@@ -1,14 +1,14 @@
 ﻿namespace Conquest.scripts.Messages
 {
     using System;
-    using System.Collections.Generic;	
-    using ConqConfig;
+    using System.Collections.Generic;
     using Conquest.scripts;
     using ProtoBuf;
     using Sandbox.ModAPI;
-	using VRageMath;
-	using Conquest.scripts.ConqStructures;
-
+    using VRageMath;
+    using Conquest.scripts.ConqStructures;
+    using VRage.Game.ModAPI;
+    using VRage.ModAPI;
     [ProtoContract]
     public class MessageConqBase : MessageBase
     {
@@ -36,11 +36,12 @@
 						{
 							MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Base",
 							string.Format(" {0} Is NOT a valid Conquest Base as it is within safe zone: {1}", SelectedGrid.DisplayName, Zone.DisplayName));
-							return;
+                            ConquestScript.Instance.DataLock.ReleaseExclusive();
+                            return;
 						}
 					}
 					ConquestScript.Instance.DataLock.ReleaseExclusive();
-					BoundingSphereD Sphere = new BoundingSphereD(TempPosition, ConquestScript.Instance.Config.ConquerDistance);
+					BoundingSphereD Sphere = new BoundingSphereD(TempPosition, ConquestScript.Instance.Config.BaseDistance);
 					List<IMyEntity> Entities = MyAPIGateway.Entities.GetEntitiesInSphere(ref Sphere);
 					List<IMyEntity> Grids = new List<IMyEntity>();
 					foreach (IMyEntity Entity in Entities)
@@ -50,11 +51,9 @@
 							Grids.Add(Entity);
 						}
 					}
-					
-					
-					Vector3D ConquestPosition = new Vector3D();
-					string Reason = " ";
-					if (ConquestScript.Instance.IsConquestBase(SelectedGrid, ref ConquestPosition, ref Reason))
+                    string Reason = "";
+                    ConquestGrid ConqGrid = new ConquestGrid(SelectedGrid);
+					if (ConqGrid.IsValid)
 					{
 						//MyAPIGateway.Utilities.ShowMessage("ConquestBase", SelectedBlock.CubeGrid.DisplayName + " Is a valid Conquest Base!");
 						MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Base",
@@ -62,17 +61,20 @@
 					}
 					else
 					{
-						//MyAPIGateway.Utilities.ShowMessage("ConquestBase", SelectedBlock.CubeGrid.DisplayName + " Is NOT a valid Conquest Base! Reason(s):" + Reason);
-						MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Base",
+                        foreach (string reason in ConqGrid.Reasons)
+                        {
+                            Reason += reason;
+                        }
+                        //MyAPIGateway.Utilities.ShowMessage("ConquestBase", SelectedBlock.CubeGrid.DisplayName + " Is NOT a valid Conquest Base! Reason(s):" + Reason);
+                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Base",
 						string.Format(" {0} Is NOT a valid Conquest Base! Reason(s): {1}", SelectedGrid.DisplayName, Reason));
 					}
 					bool FarEnough = true;
 					string OffendingBaseName2 = " ";
 					foreach (IMyCubeGrid Grid in Grids)
 					{
-						Vector3D ConquestPosition2 = new Vector3D();
-						string Reason2 = " ";
-						if ((Grid.EntityId != SelectedGrid.EntityId) && (ConquestScript.Instance.IsConquestBase(Grid, ref ConquestPosition2, ref Reason2)))
+                        ConqGrid = new ConquestGrid(Grid);
+						if ((Grid.EntityId != SelectedGrid.EntityId) && (ConqGrid.IsValid))
 						{
 							FarEnough = false;
 							OffendingBaseName2 = Grid.DisplayName;
@@ -92,9 +94,10 @@
 				}
 				
 			}
-			catch
+			catch (Exception ex)
 			{
-				MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Base", "Error: Could not retrieve IMyCubeGrid with EntityId.");
+                ConquestScript.Instance.ClientLogger.WriteException(ex);
+                MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Base", "Error: Could not retrieve IMyCubeGrid with EntityId.");
 				ConquestScript.Instance.DataLock.ReleaseExclusive();
 				return;
 			}			

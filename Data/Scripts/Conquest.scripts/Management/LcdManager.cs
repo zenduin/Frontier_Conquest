@@ -3,19 +3,13 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using ConqConfig;
     using Conquest.scripts;
     using Conquest.scripts.ConqStructures;
     using Sandbox.Common.ObjectBuilders;
-    using Sandbox.Common.ObjectBuilders.Definitions;
-    using Sandbox.Definitions;
     using Sandbox.ModAPI;
     using Sandbox.ModAPI.Interfaces;
-    using VRage.Game;
     using VRage.Game.ModAPI;
-    using VRage.Game.ObjectBuilders.Definitions;
     using VRage.ModAPI;
-    using VRage.ObjectBuilders;
     using VRageMath;
 
     public class LcdManager
@@ -83,8 +77,7 @@
         {
             //counter++;
 
-            var checkArray = (textPanel.GetPublicTitle() + " " + textPanel.GetPrivateTitle()).Split(new Char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            var showAll = false;
+            var checkArray = (textPanel.GetPublicTitle() + " " + textPanel.GetPrivateTitle()).Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
             bool showLeaderboard = false;
             bool showConfig = false;
 
@@ -142,7 +135,14 @@
 						if (Faction.VictoryPoints > 0)
 						{
 							writer.AddPublicLeftTrim(NameColumn - 50, Faction.FactionTag);
-							writer.AddPublicText("    " + Faction.FactionName);
+                            if (Faction.FactionName.Length > 40)
+                            {
+                                writer.AddPublicText("    " + Faction.FactionName.Substring(0, 40) + "...");
+                            }
+                            else
+                            {
+                                writer.AddPublicText("    " + Faction.FactionName);
+                            }
 							writer.AddPublicRightText(VictoryPointsColumn, Faction.VictoryPoints.ToString());
 							if (ConquestScript.Instance.Config.PlanetPoints > 0)
 							writer.AddPublicRightText(PlanetBasesColumn, Faction.PlanetBases.ToString());
@@ -168,8 +168,15 @@
 						if (Faction.VictoryPoints > 0)
 						{
 							writer.AddPublicLeftTrim(NameColumn - 25, Faction.FactionTag);
-							writer.AddPublicText("    " + Faction.FactionName);
-							writer.AddPublicRightText(VictoryPointsColumn, Faction.VictoryPoints.ToString());
+                            if (Faction.FactionName.Length > 40)
+                            {
+                                writer.AddPublicText("    " + Faction.FactionName.Substring(0, 30) + "...");
+                            }
+                            else
+                            {
+                                writer.AddPublicText("    " + Faction.FactionName);
+                            }
+                            writer.AddPublicRightText(VictoryPointsColumn, Faction.VictoryPoints.ToString());
 							writer.AddPublicLine();
 						}
 

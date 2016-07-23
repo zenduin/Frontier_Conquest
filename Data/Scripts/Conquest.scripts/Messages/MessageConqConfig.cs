@@ -1,14 +1,11 @@
 ﻿namespace Conquest.scripts.Messages
 {
     using System;
-    using System.Collections.Generic;
-    using System.Text;
     using Conquest.scripts;
     using Management;
     using ProtoBuf;
     using Sandbox.ModAPI;
     using VRage;
-    using VRage.Game.ModAPI;
 
     /// <summary>
     /// this is to do the actual work of setting new prices and stock levels.
@@ -53,7 +50,6 @@
                 return;
             }
 
-            MyTexts.LanguageDescription myLanguage;
 
             // These will match with names defined in the RegEx patterm <ConquestScript.Conquest ConfigPattern>
             switch (ConfigName)
@@ -368,15 +364,81 @@
                     break;
 
                 #endregion
-				
-				default:
+
+                #region antenna
+
+                case "antenna":
+                    if (string.IsNullOrEmpty(Value))
+                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "Antenna usage is: {0}", ConquestScript.Instance.Config.Antenna ? "On" : "Off");
+                    else
+                    {
+                        bool? boolTest = GetBool(Value);
+                        if (boolTest.HasValue)
+                        {
+                            var clearRefresh = ConquestScript.Instance.Config.Antenna && !boolTest.Value;
+                            ConquestScript.Instance.Config.Antenna = boolTest.Value;
+                            MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "Antenna usage changed to: {0}", ConquestScript.Instance.Config.Antenna ? "On" : "Off");
+
+                            return;
+                        }
+                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "Antenna usage is: {0}", ConquestScript.Instance.Config.Antenna ? "On" : "Off");
+                    }
+                    break;
+
+                #endregion
+
+                #region persistant
+
+                case "persistant":
+                    if (string.IsNullOrEmpty(Value))
+                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "persistance is: {0}", ConquestScript.Instance.Config.Persistant ? "On" : "Off");
+                    else
+                    {
+                        bool? boolTest = GetBool(Value);
+                        if (boolTest.HasValue)
+                        {
+                            var clearRefresh = ConquestScript.Instance.Config.Persistant && !boolTest.Value;
+                            ConquestScript.Instance.Config.Persistant = boolTest.Value;
+                            MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "persistance changed to: {0}", ConquestScript.Instance.Config.Persistant ? "On" : "Off");
+
+                            return;
+                        }
+                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "persistance iss: {0}", ConquestScript.Instance.Config.Persistant ? "On" : "Off");
+                    }
+                    break;
+
+                #endregion
+
+                #region upgrades
+
+                case "upgrades":
+                    if (string.IsNullOrEmpty(Value))
+                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "conquest upgrade modules are: {0}", ConquestScript.Instance.Config.Upgrades ? "On" : "Off");
+                    else
+                    {
+                        bool? boolTest = GetBool(Value);
+                        if (boolTest.HasValue)
+                        {
+                            var clearRefresh = ConquestScript.Instance.Config.Upgrades && !boolTest.Value;
+                            ConquestScript.Instance.Config.Upgrades = boolTest.Value;
+                            MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "conquest upgrade modules are now: {0}", ConquestScript.Instance.Config.Upgrades ? "On" : "Off");
+
+                            return;
+                        }
+                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "conquest upgrade modules are: {0}", ConquestScript.Instance.Config.Upgrades ? "On" : "Off");
+                    }
+                    break;
+
+                #endregion
+
+                default:
 				// No Cases matched!
 				string Content = string.Format("Points per planetary conquest base: {0}\nPoints per moon conquest base: {1}\nPoints per asteroid conquest base: {2}\nMinimum planet radius (smaller is a moon): {3}m ", 
 					ConquestScript.Instance.Config.PlanetPoints.ToString(), ConquestScript.Instance.Config.MoonPoints.ToString(), ConquestScript.Instance.Config.AsteroidPoints.ToString(), ConquestScript.Instance.Config.PlanetSize.ToString());
 				Content += string.Format("\nMinimum beacon transmit distance: {0}m\nMinimum distance between conquest bases: {1}m\nConquer distance: {2}m\nUpdate Frequency (Points and new bases): {3} minutes\n",
 					ConquestScript.Instance.Config.BeaconDistance.ToString(), ConquestScript.Instance.Config.BaseDistance.ToString(), ConquestScript.Instance.Config.ConquerDistance.ToString(), ConquestScript.Instance.Config.UpdateFrequency.ToString());
-				Content += string.Format("Assembler required on conquest base: {0}\nRefinery required on conquest base: {1}\nCargo container required on conquest base: {2}\nConquest bases required to be static grid: {3}\nLCD updating: {4}", 
-				FromBool(ConquestScript.Instance.Config.AssemblerReq), FromBool(ConquestScript.Instance.Config.RefineryReq), FromBool(ConquestScript.Instance.Config.CargoReq), FromBool(ConquestScript.Instance.Config.StaticReq), FromBool(ConquestScript.Instance.Config.EnableLcds));
+				Content += string.Format("Assembler required on conquest base: {0}\nRefinery required on conquest base: {1}\nCargo container required on conquest base: {2}\nConquest bases required to be static grid: {3}\nLCD updating: {4}\nAntenna usage: {5}", 
+				FromBool(ConquestScript.Instance.Config.AssemblerReq), FromBool(ConquestScript.Instance.Config.RefineryReq), FromBool(ConquestScript.Instance.Config.CargoReq), FromBool(ConquestScript.Instance.Config.StaticReq), FromBool(ConquestScript.Instance.Config.EnableLcds), FromBool(ConquestScript.Instance.Config.Antenna));
 				MessageClientDialogMessage.SendMessage(SenderSteamId, "Frontier Conquest Config", "Configuration options and values", Content);
 				break;
             }
