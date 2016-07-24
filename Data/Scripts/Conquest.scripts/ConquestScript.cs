@@ -350,6 +350,52 @@
                         ConquestFaction Faction = TempData.ConquestFactions.Find(x => x.FactionId == Base.FactionId);
                         int InitialPoints = Faction.VictoryPoints;
                         int NewPoints = ((Base.Asteroids * Config.AsteroidPoints) + (Base.Moons * Config.MoonPoints) + (Base.Planets * Config.PlanetPoints));
+                        if (Config.Reward && Config.CargoReq)
+                        {
+                            try
+                            {
+                                ConquestGrid ConqGrid = new ConquestGrid((IMyCubeGrid)MyAPIGateway.Entities.GetEntityById(Base.EntityId));
+                                ServerLogger.WriteStart("Retrieved ConquestGrid from EntityId");
+                                foreach (string PlanetName in Base.Planetoids)
+                                {
+                                    ConqPlanet Planet = Config.Planetoids.FirstOrDefault(x => x.SubTypeId == PlanetName);
+                                    ServerLogger.WriteStart("Retrieved Planet from PlanetName");
+
+                                    foreach (ConqItem Item in Planet.Items)
+                                    {
+                                        // We need to find a container with enough space now...
+                                        foreach (IMyCargoContainer Container in ConqGrid.Containers)
+                                        {
+                                            var Entity = Container as VRage.Game.Entity.MyEntity;
+                                            var Inventory = Entity.GetInventory();
+                                            var ObjectBuilder = new MyObjectBuilder_PhysicalObject();
+                                            switch (Item.TypeId)
+                                            {
+                                                case "Ore":
+                                                    ObjectBuilder = new MyObjectBuilder_Ore() { SubtypeName = Item.SubTypeName };
+                                                    break;
+
+                                                case "Ingot":
+                                                    ObjectBuilder = new MyObjectBuilder_Ingot() { SubtypeName = Item.SubTypeName };
+                                                    break;
+                                            }                                            
+                                            if (Config.Debug)
+                                                ServerLogger.WriteStart("Created objectBuilder, null = " + (ObjectBuilder == null).ToString());
+                                            if (Inventory.CanItemsBeAdded(Item.Amount, ObjectBuilder.GetId()))
+                                            {
+                                                Inventory.AddItems(Item.Amount, ObjectBuilder);
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                ServerLogger.WriteException(ex);
+                                MyAPIGateway.Utilities.ShowMessage("Error", "An exception has been logged in the file: {0}" + ServerLogger.LogFileName);
+                            }
+                        }
                         Faction.VictoryPoints += NewPoints;
                         ServerLogger.WriteStart("Assigned " + NewPoints + " points for valid base " + Base.DisplayName);
                         Base.IsValidPoints = true;
@@ -448,14 +494,54 @@
                                 IsNewBase = false;
                                 break;
                             }
-                            else 
+                            // base has moved but is now valid
+                            else if ((ConqGrid.IsValid) && (ConqGrid.Position != Base.Position))
                             {
-                                if (ConqGrid.Position != Base.Position)
+                                BoundingSphereD Sphere = new BoundingSphereD(ConqGrid.Position, Config.ConquerDistance);
+                                List<IMyEntity> Entities = TempEntities.GetEntitiesInSphere(ref Sphere);
+                                int PlanetCount = 0;
+                                int AsteroidCount = 0;
+                                int MoonCount = 0;
+                                List<string> Planetoids = new List<string>();
+                                foreach (IMyEntity Entity in Entities)
                                 {
-                                    Base.Position = ConqGrid.Position;
-                                    Base.IsValidPoints = false;
+                                    if (Entity is MyPlanet)
+                                    {
+                                        MyPlanet Planet = Entity as MyPlanet;
+                                        Planetoids.Add(Planet.Generator.Id.SubtypeName);
+                                        if (Planet.AverageRadius >= Config.PlanetSize)
+                                        {
+                                            PlanetCount++;
+                                        }
+                                        else
+                                        {
+                                            MoonCount++;
+                                        }
+                                    }
+                                    else if (Entity is MyVoxelMap)
+                                    {
+                                        Planetoids.Add("Asteroid");
+                                        AsteroidCount++;
+                                    }
                                 }
+                                //Don't count rocks on planets and moons as asteroids
+                                if (PlanetCount > 0 || MoonCount > 0)
+                                {
+                                    AsteroidCount = 0;
+                                }
+                                Base.Planets = PlanetCount;
+                                Base.Moons = MoonCount;
+                                Base.Asteroids = AsteroidCount;
+                                Base.Position = ConqGrid.Position;
+                                Base.IsValid = true;
+                                Base.Planetoids = Planetoids;
+                                Base.IsValidPoints = false;
                             }
+                            else                               
+                            {                                
+                                Base.IsValidPoints = false;
+                            }
+                            
                         }
                     }
                     if (IsNewBase && ConqGrid.IsValid)
@@ -465,11 +551,13 @@
                         int PlanetCount = 0;
                         int AsteroidCount = 0;
                         int MoonCount = 0;
+                        List<string> Planetoids = new List<string>();
                         foreach (IMyEntity Entity in Entities)
                         {
                             if (Entity is MyPlanet)
                             {
                                 MyPlanet Planet = Entity as MyPlanet;
+                                Planetoids.Add(Planet.Generator.Id.SubtypeName);
                                 if (Planet.AverageRadius >= Config.PlanetSize)
                                 {
                                     PlanetCount++;
@@ -478,10 +566,10 @@
                                 {
                                     MoonCount++;
                                 }
-
                             }
                             else if (Entity is MyVoxelMap)
                             {
+                                Planetoids.Add("Asteroid");
                                 AsteroidCount++;
                             }
                         }
@@ -499,6 +587,7 @@
                         NewBase.Asteroids = AsteroidCount;
                         NewBase.Position = ConqGrid.Position;
                         NewBase.IsValid = true;
+                        NewBase.Planetoids = Planetoids;
                         ValidBases.Add(NewBase);
                         ValidBasePositions.Add(ConqGrid.Position);
                     }
@@ -908,6 +997,7 @@
         public Vector3D Position;
         public float Radius;
         public List<string> Reasons = new List<string>();
+        public List<IMyCargoContainer> Containers = new List<IMyCargoContainer>();
         public ConquestGrid(IMyCubeGrid grid)
         {
             Grid = grid;
@@ -1011,6 +1101,7 @@
                         }
                         else if ((FatBlock is IMyCargoContainer) && FatBlock.IsFunctional)
                         {
+                            Containers.Add((IMyCargoContainer)FatBlock);
                             ConquestCargo = true;
                         }
                     }

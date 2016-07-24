@@ -25,6 +25,8 @@
 		public bool IsValid { get; set; }		// true if this base counts for points next time the code runs (set to false when first discovered)
 
         public bool IsValidPoints { get; set; }
+
+        public List<string> Planetoids { get; set; }
 		
     }
 	

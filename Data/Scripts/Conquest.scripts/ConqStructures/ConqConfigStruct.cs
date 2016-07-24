@@ -8,6 +8,8 @@
     [XmlType("ConqConfig")]
     public class ConqConfigStruct
     {	
+        public List<ConqPlanet> Planetoids { get; set; }
+
 		public int PlanetPoints { get; set; }		// per minute
 		
 		public int MoonPoints { get; set; }			// per minute
@@ -40,7 +42,9 @@
 
         public bool Upgrades { get; set; }
 
-        public bool Building { get; set; }		
+        public bool Building { get; set; }
+        
+        public bool Reward { get; set; }	
 
         public bool Debug { get; set; }
     }

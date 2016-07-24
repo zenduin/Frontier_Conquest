@@ -99,6 +99,8 @@
     <Compile Include="Data\Scripts\Conquest.scripts\ConqConfig\ConqDataManager.cs" />
     <Compile Include="Data\Scripts\Conquest.scripts\ConqStructures\ConqConfigStruct.cs" />
     <Compile Include="Data\Scripts\Conquest.scripts\ConqStructures\ConqDataStruct.cs" />
+    <Compile Include="Data\Scripts\Conquest.scripts\ConqStructures\ConqItem.cs" />
+    <Compile Include="Data\Scripts\Conquest.scripts\ConqStructures\ConqPlanet.cs" />
     <Compile Include="Data\Scripts\Conquest.scripts\ConqStructures\ConquestBase.cs" />
     <Compile Include="Data\Scripts\Conquest.scripts\ConqStructures\ConquestExclusionZone.cs" />
     <Compile Include="Data\Scripts\Conquest.scripts\ConqStructures\ConquestFaction.cs" />
