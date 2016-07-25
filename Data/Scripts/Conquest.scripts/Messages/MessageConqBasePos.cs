@@ -43,15 +43,42 @@
                             return;
 						}
 					}
-					ConquestScript.Instance.DataLock.ReleaseExclusive();
+                    bool boAR = false;
+                    if (ConquestScript.Instance.Config.AreaReq == true)
+                    {
+
+                        foreach (ConquestAreaZone Zone in ConquestScript.Instance.Data.ConquestAreas)
+                        {
+                            if ((Vector3D.Distance(TempPosition, Zone.Position) < Zone.Radius))
+                            {
+                                boAR = true;
+                                break;
+                            }
+                        }
+
+                        if (boAR == false)
+                        {
+                            MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Base",
+                            string.Format("This is NOT a valid position to establish a conquest base as it is NOT in a Conquest Area zone"));
+                            ConquestScript.Instance.DataLock.ReleaseExclusive();
+                            return;
+                        }
+                }
+                ConquestScript.Instance.DataLock.ReleaseExclusive();
 				}
 				else
 				{
 					MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Base", "Server busy, try again later.");
-					return;
-				}
+                try
+                {
+                    ConquestScript.Instance.DataLock.ReleaseExclusive();
+                    return;
+                }
+                catch { return; }
 
-			string OffendingBaseName = " ";
+            }
+
+            string OffendingBaseName = " ";
 			bool FarEnough = true;
 			foreach (IMyCubeGrid Grid in Grids)
 			{
@@ -73,7 +100,9 @@
 				//MyAPIGateway.Utilities.ShowMessage("ConquestBase", "This is NOT a valid position to establish a conquest base. " + OffendingBaseName + " is too close.");
 				MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Base",
 				string.Format("This is NOT a valid position to establish a conquest base. {0} is too close.", OffendingBaseName));
-			}				
+                ConquestScript.Instance.DataLock.ReleaseExclusive();
+                return;
+            }				
         }
 
         public static void SendMessage( Vector3D tempPosition)

@@ -14,5 +14,7 @@
         public List<ConquestBase> ConquestBases;
 		
 		public List<ConquestExclusionZone> ConquestExclusions;
+
+        public List<ConquestAreaZone> ConquestAreas;
     }
 }

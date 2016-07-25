@@ -38,6 +38,8 @@
 		
 		public bool EnableLcds { get; set; }
 
+        public bool AreaReq { get; set; }       // Enable exclusive contested areas: Area Conquest
+
         public bool Persistant { get; set; }
 
         public bool Upgrades { get; set; }

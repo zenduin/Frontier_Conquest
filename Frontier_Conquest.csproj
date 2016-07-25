@@ -7,7 +7,7 @@
     <OutputType>Library</OutputType>
     <NoStandardLibraries>false</NoStandardLibraries>
     <AssemblyName>ClassLibrary</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -56,16 +56,16 @@
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Sandbox.Common">
-      <HintPath>G:\SteamLibrary\steamapps\common\SpaceEngineers\Bin64\Sandbox.Common.dll</HintPath>
+      <HintPath>E:\steam\steamapps\common\SpaceEngineers\Bin64\Sandbox.Common.dll</HintPath>
     </Reference>
     <Reference Include="Sandbox.Game">
-      <HintPath>G:\SteamLibrary\steamapps\common\SpaceEngineers\Bin64\Sandbox.Game.dll</HintPath>
+      <HintPath>E:\steam\steamapps\common\SpaceEngineers\Bin64\Sandbox.Game.dll</HintPath>
     </Reference>
     <Reference Include="SpaceEngineers.Game">
-      <HintPath>G:\SteamLibrary\steamapps\common\SpaceEngineers\Bin64\SpaceEngineers.Game.dll</HintPath>
+      <HintPath>E:\steam\steamapps\common\SpaceEngineers\Bin64\SpaceEngineers.Game.dll</HintPath>
     </Reference>
     <Reference Include="SpaceEngineers.ObjectBuilders">
-      <HintPath>G:\SteamLibrary\steamapps\common\SpaceEngineers\Bin64\SpaceEngineers.ObjectBuilders.dll</HintPath>
+      <HintPath>E:\steam\steamapps\common\SpaceEngineers\Bin64\SpaceEngineers.ObjectBuilders.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -74,19 +74,19 @@
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="VRage">
-      <HintPath>G:\SteamLibrary\steamapps\common\SpaceEngineers\Bin64\VRage.dll</HintPath>
+      <HintPath>E:\steam\steamapps\common\SpaceEngineers\Bin64\VRage.dll</HintPath>
     </Reference>
     <Reference Include="VRage.Game">
-      <HintPath>G:\SteamLibrary\steamapps\common\SpaceEngineers\Bin64\VRage.Game.dll</HintPath>
+      <HintPath>E:\steam\steamapps\common\SpaceEngineers\Bin64\VRage.Game.dll</HintPath>
     </Reference>
     <Reference Include="VRage.Input">
-      <HintPath>G:\SteamLibrary\steamapps\common\SpaceEngineers\Bin64\VRage.Input.dll</HintPath>
+      <HintPath>E:\steam\steamapps\common\SpaceEngineers\Bin64\VRage.Input.dll</HintPath>
     </Reference>
     <Reference Include="VRage.Library">
-      <HintPath>G:\SteamLibrary\steamapps\common\SpaceEngineers\Bin64\VRage.Library.dll</HintPath>
+      <HintPath>E:\steam\steamapps\common\SpaceEngineers\Bin64\VRage.Library.dll</HintPath>
     </Reference>
     <Reference Include="VRage.Math">
-      <HintPath>G:\SteamLibrary\steamapps\common\SpaceEngineers\Bin64\VRage.Math.dll</HintPath>
+      <HintPath>E:\steam\steamapps\common\SpaceEngineers\Bin64\VRage.Math.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -101,6 +101,7 @@
     <Compile Include="Data\Scripts\Conquest.scripts\ConqStructures\ConqDataStruct.cs" />
     <Compile Include="Data\Scripts\Conquest.scripts\ConqStructures\ConqItem.cs" />
     <Compile Include="Data\Scripts\Conquest.scripts\ConqStructures\ConqPlanet.cs" />
+    <Compile Include="Data\Scripts\Conquest.scripts\ConqStructures\ConquestAreaZone.cs" />
     <Compile Include="Data\Scripts\Conquest.scripts\ConqStructures\ConquestBase.cs" />
     <Compile Include="Data\Scripts\Conquest.scripts\ConqStructures\ConquestExclusionZone.cs" />
     <Compile Include="Data\Scripts\Conquest.scripts\ConqStructures\ConquestFaction.cs" />
@@ -113,6 +114,7 @@
     <Compile Include="Data\Scripts\Conquest.scripts\Messages\MessageBase.cs" />
     <Compile Include="Data\Scripts\Conquest.scripts\Messages\MessageClientDialogMessage.cs" />
     <Compile Include="Data\Scripts\Conquest.scripts\Messages\MessageClientTextMessage.cs" />
+    <Compile Include="Data\Scripts\Conquest.scripts\Messages\MessageConqArea.cs" />
     <Compile Include="Data\Scripts\Conquest.scripts\Messages\MessageConqBase.cs" />
     <Compile Include="Data\Scripts\Conquest.scripts\Messages\MessageConqBasePos.cs" />
     <Compile Include="Data\Scripts\Conquest.scripts\Messages\MessageConqConfig.cs" />

@@ -13,7 +13,8 @@
 	[XmlInclude(typeof(MessageConqLeaderboard))]
 	[XmlInclude(typeof(MessageConqConfig))]
 	[XmlInclude(typeof(MessageConqExclude))]
-	[XmlInclude(typeof(MessageConqReset))]
+    [XmlInclude(typeof(MessageConqArea))]
+    [XmlInclude(typeof(MessageConqReset))]
     [ProtoContract]
     public abstract class MessageBase
     {
