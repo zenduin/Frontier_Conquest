@@ -211,7 +211,7 @@
 					Content += string.Format("\nMinimum beacon transmit distance: {0}m\nMinimum distance between conquest bases: {1}m\nConquer distance: {2}m\nUpdate Frequency (Points and new bases): {3} minutes\n",
 						ConquestScript.Instance.Config.BeaconDistance.ToString(), ConquestScript.Instance.Config.BaseDistance.ToString(), ConquestScript.Instance.Config.ConquerDistance.ToString(), ConquestScript.Instance.Config.UpdateFrequency.ToString());
 					Content += string.Format("Assembler required on conquest base: {0}\nRefinery required on conquest base: {1}\nCargo container required on conquest base: {2}\nConquest bases required to be static grid: {3}\nLCD updating: {4}", 
-					FromBool(ConquestScript.Instance.Config.AssemblerReq), FromBool(ConquestScript.Instance.Config.RefineryReq), FromBool(ConquestScript.Instance.Config.CargoReq), FromBool(ConquestScript.Instance.Config.StaticReq), FromBool(ConquestScript.Instance.Config.EnableLcds));
+					FromBool(ConquestScript.Instance.Config.AssemblerReq), FromBool(ConquestScript.Instance.Config.RefineryReq), FromBool(ConquestScript.Instance.Config.CargoReq), FromBool(ConquestScript.Instance.Config.StaticReq), FromBool(ConquestScript.Instance.Config.AreaReq), FromBool(ConquestScript.Instance.Config.EnableLcds));
 				}
 				else
 				{
@@ -219,7 +219,7 @@
 				Content += string.Format("\nBeacon distance: {0}m\nBase distance: {1}m\nConquer distance: {2}m\nUpdate Frequency: {3} minutes\n",
 					ConquestScript.Instance.Config.BeaconDistance.ToString(), ConquestScript.Instance.Config.BaseDistance.ToString(), ConquestScript.Instance.Config.ConquerDistance.ToString(), ConquestScript.Instance.Config.UpdateFrequency.ToString());
 				Content += string.Format("Assembler required: {0}\nRefinery required: {1}\nCargo container required: {2}\nStatic grid required: {3}\nLCD updating: {4}", 
-				FromBool(ConquestScript.Instance.Config.AssemblerReq), FromBool(ConquestScript.Instance.Config.RefineryReq), FromBool(ConquestScript.Instance.Config.CargoReq), FromBool(ConquestScript.Instance.Config.StaticReq), FromBool(ConquestScript.Instance.Config.EnableLcds));
+				FromBool(ConquestScript.Instance.Config.AssemblerReq), FromBool(ConquestScript.Instance.Config.RefineryReq), FromBool(ConquestScript.Instance.Config.CargoReq), FromBool(ConquestScript.Instance.Config.StaticReq), FromBool(ConquestScript.Instance.Config.AreaReq), FromBool(ConquestScript.Instance.Config.EnableLcds));
 				}
 				writer.AddPublicText(Content);
 			}

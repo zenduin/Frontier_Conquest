@@ -32,11 +32,14 @@
     [MySessionComponentDescriptor(MyUpdateOrder.AfterSimulation)]
 	public class ConquestScript : MySessionComponentBase
 	{		
-		const string ConquestConfigPattern = @"^(?<command>/conqconfig)(?:\s+(?<config>((PlanetPoints)|(MoonPoints)|(AsteroidPoints)|(PlanetSize)|(BeaconDistance)|(BaseDistance)|(ConquerDistance)|(UpdateFrequency)|(AssemblerReq)|(RefineryReq)|(CargoReq)|(StaticReq)|(Lcds)|(Antenna)|(Persistant)|(Upgrades)))(?:\s+(?<value>.+))?)?";
+		const string ConquestConfigPattern = @"^(?<command>/conqconfig)(?:\s+(?<config>((PlanetPoints)|(MoonPoints)|(AsteroidPoints)|(PlanetSize)|(BeaconDistance)|(BaseDistance)|(ConquerDistance)|(UpdateFrequency)|(AssemblerReq)|(RefineryReq)|(CargoReq)|(StaticReq)|(AreaReq)|(Lcds)|(Antenna)|(Persistant)|(Upgrades)))(?:\s+(?<value>.+))?)?";
 	    const string ConquestExcludeAddPattern = @"(?<command>/conqexclude)\s+((add)|(create))\s+(?:(?:""(?<name>[^""]|.*?)"")|(?<name>[^\s]*))\s+(?<X>[+-]?((\d+(\.\d*)?)|(\.\d+)))\s+(?<Y>[+-]?((\d+(\.\d*)?)|(\.\d+)))\s+(?<Z>[+-]?((\d+(\.\d*)?)|(\.\d+)))\s+(?<Size>(\d+(\.\d*)?))";
         const string ConquestExcludeDeletePattern = @"(?<command>/conqexclude)\s+((del)|(delete)|(remove))\s+(?:(?:""(?<name>[^""]|.*?)"")|(?<name>.*))";
-		
-		private bool _isInitialized;
+        const string ConquestAreaAddPattern = @"(?<command>/conqarea)\s+((add)|(create))\s+(?:(?:""(?<name>[^""]|.*?)"")|(?<name>[^\s]*))\s+(?<X>[+-]?((\d+(\.\d*)?)|(\.\d+)))\s+(?<Y>[+-]?((\d+(\.\d*)?)|(\.\d+)))\s+(?<Z>[+-]?((\d+(\.\d*)?)|(\.\d+)))\s+(?<Size>(\d+(\.\d*)?))";
+        const string ConquestAreaDeletePattern = @"(?<command>/conqarea)\s+((del)|(delete)|(remove))\s+(?:(?:""(?<name>[^""]|.*?)"")|(?<name>.*))";
+
+
+        private bool _isInitialized;
         private bool _isClientRegistered;
         private bool _isServerRegistered;
         private Timer _UpdateTimer;
@@ -606,7 +609,7 @@
 				for (int i=0;i<ValidBases.Count;i++)
 				{
 					foreach (Vector3D Position in ValidBasePositions)
-					{
+					{foreach (ConquestExclusionZone ExclusionZone in TempData.ConquestExclusions)
 						if ((ValidBases[i].Position != Position) && (Vector3D.Distance(ValidBases[i].Position, Position) < Config.BaseDistance))
 						{
                             ValidBases[i].IsValid = false;
@@ -621,8 +624,23 @@
 							break;
 						}
 					}
-				}
-				foreach (ConquestBase Base in ValidBases)
+
+                    if (Instance.Config.AreaReq == true)
+                    {
+
+                        TempData.ConquestBases[i].IsValid = false;
+
+                        foreach (ConquestAreaZone AreaZone in TempData.ConquestAreas)
+                        {
+                            if ((Vector3D.Distance(TempData.ConquestBases[i].Position, AreaZone.Position) < AreaZone.Radius))
+                            {
+                                TempData.ConquestBases[i].IsValid = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                foreach (ConquestBase Base in ValidBases)
 				{
 					if (Base.IsValid)
 					{
@@ -748,10 +766,45 @@
 				 return true;
 				
 			}
-			#endregion
-			
-			#region conqreset
-			if (split[0].Equals("/conqreset", StringComparison.InvariantCultureIgnoreCase) && MyAPIGateway.Session.Player.IsAdmin())
+            #endregion
+
+            #region conqarea
+            if (split[0].Equals("/conqarea", StringComparison.InvariantCultureIgnoreCase) && MyAPIGateway.Session.Player.IsAdmin())
+            {
+                match = Regex.Match(messageText, ConquestAreaAddPattern, RegexOptions.IgnoreCase);
+                if (match.Success)
+                {
+                    string ZoneName = match.Groups["name"].Value;
+                    double x = Convert.ToDouble(match.Groups["X"].Value, CultureInfo.InvariantCulture);
+                    double y = Convert.ToDouble(match.Groups["Y"].Value, CultureInfo.InvariantCulture);
+                    double z = Convert.ToDouble(match.Groups["Z"].Value, CultureInfo.InvariantCulture);
+                    int size = Convert.ToInt32(match.Groups["Size"].Value, CultureInfo.InvariantCulture);
+                    MessageConqArea.SendAddMessage(ZoneName, x, y, z, size);
+                    return true;
+                }
+
+                match = Regex.Match(messageText, ConquestAreaDeletePattern, RegexOptions.IgnoreCase);
+                if (match.Success)
+                {
+                    MessageConqArea.SendRemoveMessage(match.Groups["name"].Value);
+                    return true;
+                }
+
+                if (split.Length > 1 && split[1].Equals("list", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    MessageConqArea.SendListMessage();
+                    return true;
+                }
+
+                MyAPIGateway.Utilities.ShowMessage("/conqarea list/[add]/remove zone [x y z radius]", "Manages conquest area zones");
+                return true;
+
+            }
+            #endregion
+
+
+            #region conqreset
+            if (split[0].Equals("/conqreset", StringComparison.InvariantCultureIgnoreCase) && MyAPIGateway.Session.Player.IsAdmin())
             {		
                 MessageConqReset.SendMessage();				
 				return true;				
@@ -769,7 +822,7 @@
                     MyAPIGateway.Utilities.ShowMessage("Conquest Help", "Commands: conqbase, conqlb & conqleaderboard");
 					if (MyAPIGateway.Session.Player.IsAdmin())
                     {
-						MyAPIGateway.Utilities.ShowMessage("Conquest Help", "Admin commands: conqconfig conqexclude conqreset");
+						MyAPIGateway.Utilities.ShowMessage("Conquest Help", "Admin commands: conqconfig conqexclude conqarea conqreset");
 					}
                     MyAPIGateway.Utilities.ShowMessage("Conquest Help", "Try '/conqhelp command' for more informations about specific command");
                     return true;
@@ -800,7 +853,7 @@
 								}
 								else
 								{
-									MyAPIGateway.Utilities.ShowMessage("Conquest Help", "/conqconfig subcommands: PlanetPoints MoonPoints AsteroidPoints PlanetSize BeaconDistance ConquerDistance UpdateFrequency AssemblerReq RefineryReq CargoReq StaticReq Lcds");
+									MyAPIGateway.Utilities.ShowMessage("Conquest Help", "/conqconfig subcommands: PlanetPoints MoonPoints AsteroidPoints PlanetSize BeaconDistance ConquerDistance UpdateFrequency AssemblerReq RefineryReq CargoReq StaticReq AreaReq Lcds");
 									return true;
 								}
 						case "conqexclude":
@@ -813,7 +866,17 @@
 									MyAPIGateway.Utilities.ShowMessage("Conquest Help", "/conqexclude subcommands: Add [Name X Y Z Radius] Remove [Name] List");
 									return true; 
 								}
-						case "conqreset":
+                        case "conqarea":
+                            if (!MyAPIGateway.Session.Player.IsAdmin())
+                            {
+                                return false;
+                            }
+                            else
+                            {
+                                MyAPIGateway.Utilities.ShowMessage("Conquest Help", "/conqarea subcommands: Add [Name X Y Z Radius] Remove [Name] List");
+                                return true;
+                            }
+                        case "conqreset":
 							if (!MyAPIGateway.Session.Player.IsAdmin()) 
 								{
 									return false;

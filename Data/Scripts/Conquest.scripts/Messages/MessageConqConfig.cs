@@ -337,10 +337,31 @@
                     break;
 
                 #endregion
-				
-				#region lcds
-				
-		        case "lcds":
+
+                #region areareq
+
+                case "areareq":
+                    if (string.IsNullOrEmpty(Value))
+                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "Conquests bases are required to be inside a designated conquest area: {0}", ConquestScript.Instance.Config.AreaReq ? "On" : "Off");
+                    else
+                    {
+                        bool? boolTest = GetBool(Value);
+                        if (boolTest.HasValue)
+                        {
+                            ConquestScript.Instance.Config.AreaReq = boolTest.Value;
+                            MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "Designated Conquest area required updated to: {0}", ConquestScript.Instance.Config.AreaReq ? "On" : "Off");
+                            return;
+                        }
+
+                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "Designated Conquests area required: {0}", ConquestScript.Instance.Config.AreaReq ? "On" : "Off");
+                    }
+                    break;
+
+                #endregion
+
+                #region lcds
+
+                case "lcds":
                     if (string.IsNullOrEmpty(Value))
                         MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "LCD updating is: {0}", ConquestScript.Instance.Config.EnableLcds ? "On" : "Off");
                     else
@@ -437,8 +458,8 @@
 					ConquestScript.Instance.Config.PlanetPoints.ToString(), ConquestScript.Instance.Config.MoonPoints.ToString(), ConquestScript.Instance.Config.AsteroidPoints.ToString(), ConquestScript.Instance.Config.PlanetSize.ToString());
 				Content += string.Format("\nMinimum beacon transmit distance: {0}m\nMinimum distance between conquest bases: {1}m\nConquer distance: {2}m\nUpdate Frequency (Points and new bases): {3} minutes\n",
 					ConquestScript.Instance.Config.BeaconDistance.ToString(), ConquestScript.Instance.Config.BaseDistance.ToString(), ConquestScript.Instance.Config.ConquerDistance.ToString(), ConquestScript.Instance.Config.UpdateFrequency.ToString());
-				Content += string.Format("Assembler required on conquest base: {0}\nRefinery required on conquest base: {1}\nCargo container required on conquest base: {2}\nConquest bases required to be static grid: {3}\nLCD updating: {4}\nAntenna usage: {5}", 
-				FromBool(ConquestScript.Instance.Config.AssemblerReq), FromBool(ConquestScript.Instance.Config.RefineryReq), FromBool(ConquestScript.Instance.Config.CargoReq), FromBool(ConquestScript.Instance.Config.StaticReq), FromBool(ConquestScript.Instance.Config.EnableLcds), FromBool(ConquestScript.Instance.Config.Antenna));
+				Content += string.Format("Assembler required on conquest base: {0}\nRefinery required on conquest base: {1}\nCargo container required on conquest base: {2}\nConquest bases required to be static grid: {3}\nDesignated Conquest Areas required : {4}\nLCD updating: {5}\nAntenna usage: {6}", 
+				FromBool(ConquestScript.Instance.Config.AssemblerReq), FromBool(ConquestScript.Instance.Config.RefineryReq), FromBool(ConquestScript.Instance.Config.CargoReq), FromBool(ConquestScript.Instance.Config.StaticReq), FromBool(ConquestScript.Instance.Config.AreaReq), FromBool(ConquestScript.Instance.Config.EnableLcds), FromBool(ConquestScript.Instance.Config.Antenna));
 				MessageClientDialogMessage.SendMessage(SenderSteamId, "Frontier Conquest Config", "Configuration options and values", Content);
 				break;
             }

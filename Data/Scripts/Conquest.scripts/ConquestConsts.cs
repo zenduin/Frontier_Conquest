@@ -48,4 +48,14 @@
 		Remove,
 		List
 	}
+
+    /// <summary>
+    /// Commands to be used when managing Conquest Areas
+    /// </summary>
+    public enum AreaManage : byte
+    {
+        Add,
+        Remove,
+        List
+    }
 }
