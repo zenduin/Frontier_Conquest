@@ -72,6 +72,7 @@
 			Config.EnableLcds = true;
 			Config.UpdateFrequency = 60;
             Config.Antenna = true;
+            Config.AreaReq = true;
             Config.Persistant = false;
             Config.Upgrades = true;
             return Config;
