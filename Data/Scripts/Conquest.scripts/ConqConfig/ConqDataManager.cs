@@ -63,8 +63,6 @@
 			Config.AsteroidPoints = 1;
 			Config.PlanetSize = 25000;
 			Config.BeaconDistance = 50000;
-			Config.BaseDistance = 80000;
-			Config.ConquerDistance = 40000;
 			Config.AssemblerReq = true;
 			Config.RefineryReq = true;
 			Config.CargoReq = true;
@@ -73,7 +71,7 @@
 			Config.UpdateFrequency = 60;
             Config.Antenna = true;
             Config.AreaReq = true;
-            Config.Persistant = false;
+            Config.Persistent = false;
             Config.Upgrades = true;
             return Config;
         }

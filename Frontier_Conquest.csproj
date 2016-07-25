@@ -7,7 +7,7 @@
     <OutputType>Library</OutputType>
     <NoStandardLibraries>false</NoStandardLibraries>
     <AssemblyName>ClassLibrary</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -100,7 +100,7 @@
     <Compile Include="Data\Scripts\Conquest.scripts\ConqStructures\ConqConfigStruct.cs" />
     <Compile Include="Data\Scripts\Conquest.scripts\ConqStructures\ConqDataStruct.cs" />
     <Compile Include="Data\Scripts\Conquest.scripts\ConqStructures\ConqItem.cs" />
-    <Compile Include="Data\Scripts\Conquest.scripts\ConqStructures\ConqPlanet.cs" />
+    <Compile Include="Data\Scripts\Conquest.scripts\ConqStructures\ConqBody.cs" />
     <Compile Include="Data\Scripts\Conquest.scripts\ConqStructures\ConquestAreaZone.cs" />
     <Compile Include="Data\Scripts\Conquest.scripts\ConqStructures\ConquestBase.cs" />
     <Compile Include="Data\Scripts\Conquest.scripts\ConqStructures\ConquestExclusionZone.cs" />

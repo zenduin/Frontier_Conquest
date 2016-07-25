@@ -32,7 +32,7 @@
     [MySessionComponentDescriptor(MyUpdateOrder.AfterSimulation)]
 	public class ConquestScript : MySessionComponentBase
 	{		
-		const string ConquestConfigPattern = @"^(?<command>/conqconfig)(?:\s+(?<config>((PlanetPoints)|(MoonPoints)|(AsteroidPoints)|(PlanetSize)|(BeaconDistance)|(BaseDistance)|(ConquerDistance)|(UpdateFrequency)|(AssemblerReq)|(RefineryReq)|(CargoReq)|(StaticReq)|(AreaReq)|(Lcds)|(Antenna)|(Persistant)|(Upgrades)))(?:\s+(?<value>.+))?)?";
+		const string ConquestConfigPattern = @"^(?<command>/conqconfig)(?:\s+(?<config>((PlanetPoints)|(MoonPoints)|(AsteroidPoints)|(PlanetSize)|(BeaconDistance)|(UpdateFrequency)|(AssemblerReq)|(RefineryReq)|(CargoReq)|(StaticReq)|(AreaReq)|(Lcds)|(Antenna)|(Persistent)|(Upgrades)))(?:\s+(?<value>.+))?)?";
 	    const string ConquestExcludeAddPattern = @"(?<command>/conqexclude)\s+((add)|(create))\s+(?:(?:""(?<name>[^""]|.*?)"")|(?<name>[^\s]*))\s+(?<X>[+-]?((\d+(\.\d*)?)|(\.\d+)))\s+(?<Y>[+-]?((\d+(\.\d*)?)|(\.\d+)))\s+(?<Z>[+-]?((\d+(\.\d*)?)|(\.\d+)))\s+(?<Size>(\d+(\.\d*)?))";
         const string ConquestExcludeDeletePattern = @"(?<command>/conqexclude)\s+((del)|(delete)|(remove))\s+(?:(?:""(?<name>[^""]|.*?)"")|(?<name>.*))";
         const string ConquestAreaAddPattern = @"(?<command>/conqarea)\s+((add)|(create))\s+(?:(?:""(?<name>[^""]|.*?)"")|(?<name>[^\s]*))\s+(?<X>[+-]?((\d+(\.\d*)?)|(\.\d+)))\s+(?<Y>[+-]?((\d+(\.\d*)?)|(\.\d+)))\s+(?<Z>[+-]?((\d+(\.\d*)?)|(\.\d+)))\s+(?<Size>(\d+(\.\d*)?))";
@@ -352,53 +352,28 @@
 					{
                         ConquestFaction Faction = TempData.ConquestFactions.Find(x => x.FactionId == Base.FactionId);
                         int InitialPoints = Faction.VictoryPoints;
-                        int NewPoints = ((Base.Asteroids * Config.AsteroidPoints) + (Base.Moons * Config.MoonPoints) + (Base.Planets * Config.PlanetPoints));
-                        if (Config.Reward && Config.CargoReq)
+                        int NewPoints = ((Base.Asteroids * Config.AsteroidPoints) + (Base.Moons * Config.MoonPoints) + (Base.Planets * Config.PlanetPoints));                        
+                        if (Config.Reward)
                         {
-                            try
-                            {
-                                ConquestGrid ConqGrid = new ConquestGrid((IMyCubeGrid)MyAPIGateway.Entities.GetEntityById(Base.EntityId));
+                            ConquestGrid ConqGrid = new ConquestGrid((IMyCubeGrid)MyAPIGateway.Entities.GetEntityById(Base.EntityId));
+                            if (Config.Debug)
                                 ServerLogger.WriteStart("Retrieved ConquestGrid from EntityId");
-                                foreach (string PlanetName in Base.Planetoids)
-                                {
-                                    ConqPlanet Planet = Config.Planetoids.FirstOrDefault(x => x.SubTypeId == PlanetName);
-                                    ServerLogger.WriteStart("Retrieved Planet from PlanetName");
-
-                                    foreach (ConqItem Item in Planet.Items)
-                                    {
-                                        // We need to find a container with enough space now...
-                                        foreach (IMyCargoContainer Container in ConqGrid.Containers)
-                                        {
-                                            var Entity = Container as VRage.Game.Entity.MyEntity;
-                                            var Inventory = Entity.GetInventory();
-                                            var ObjectBuilder = new MyObjectBuilder_PhysicalObject();
-                                            switch (Item.TypeId)
-                                            {
-                                                case "Ore":
-                                                    ObjectBuilder = new MyObjectBuilder_Ore() { SubtypeName = Item.SubTypeName };
-                                                    break;
-
-                                                case "Ingot":
-                                                    ObjectBuilder = new MyObjectBuilder_Ingot() { SubtypeName = Item.SubTypeName };
-                                                    break;
-                                            }                                            
-                                            if (Config.Debug)
-                                                ServerLogger.WriteStart("Created objectBuilder, null = " + (ObjectBuilder == null).ToString());
-                                            if (Inventory.CanItemsBeAdded(Item.Amount, ObjectBuilder.GetId()))
-                                            {
-                                                Inventory.AddItems(Item.Amount, ObjectBuilder);
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            catch (Exception ex)
+                            if (Base.Planets>0)
                             {
-                                ServerLogger.WriteException(ex);
-                                MyAPIGateway.Utilities.ShowMessage("Error", "An exception has been logged in the file: {0}" + ServerLogger.LogFileName);
+                                ConqBody Body = Config.Bodies.FirstOrDefault(x => x.Type == "Planet");
+                                Reward(ConqGrid, Body, Base.Planets * Config.PlanetPoints * (Base.Radius / 50000));
                             }
-                        }
+                            if (Base.Moons > 0)
+                            {
+                                ConqBody Body = Config.Bodies.FirstOrDefault(x => x.Type == "Moon");
+                                Reward(ConqGrid, Body, Base.Moons * Config.MoonPoints * (Base.Radius / 50000));
+                            }
+                            if (Base.Asteroids > 0)
+                            {
+                                ConqBody Body = Config.Bodies.FirstOrDefault(x => x.Type == "Asteroid");
+                                Reward(ConqGrid, Body, Base.Asteroids * Config.AsteroidPoints * (Base.Radius / 50000));
+                            }
+                        }                                                 
                         Faction.VictoryPoints += NewPoints;
                         ServerLogger.WriteStart("Assigned " + NewPoints + " points for valid base " + Base.DisplayName);
                         Base.IsValidPoints = true;
@@ -417,6 +392,39 @@
                 if (Config.Debug) ServerLogger.WriteStart("Released Data Lock. END");
 				_UpdateTimerBlock = false;	
             });
+        }
+
+        private void Reward(ConquestGrid ConqGrid, ConqBody Body, float Modifier)
+        {
+            try
+            {
+                    if (Body.DefaultItems.Count > 0)
+                    {
+                        foreach (ConqItem Item in Body.DefaultItems)
+                        {
+                            ConqGrid.AddItem(Item, Modifier);
+                        }
+                    }
+                    if (Body.CommonItems.Count > 0)
+                    {
+                        Random RewardSelect = new Random();
+                        ConqItem Item = Body.CommonItems[RewardSelect.Next(0, Body.CommonItems.Count)];
+                        ConqGrid.AddItem(Item, Modifier);
+                        Item = Body.CommonItems[RewardSelect.Next(0, Body.CommonItems.Count)];
+                        ConqGrid.AddItem(Item, Modifier);
+                    }
+                    if (Body.RareItems.Count > 0)
+                    {
+                        Random RewardSelect = new Random();
+                        ConqItem Item = Body.RareItems[RewardSelect.Next(0, Body.RareItems.Count)];
+                        ConqGrid.AddItem(Item, Modifier);
+                    }
+            }
+            catch (Exception ex)
+            {
+                ServerLogger.WriteException(ex);
+                MyAPIGateway.Utilities.ShowMessage("Error", "An exception has been logged in the file: {0}" + ServerLogger.LogFileName);
+            }
         }
 
         private void Timer30EventsOnElapsed(object sender, ElapsedEventArgs elapsedEventArgs)
@@ -477,7 +485,6 @@
 					}
 				}
 				
-				List<Vector3D> ValidBasePositions = new List<Vector3D>();
 				List<ConquestBase> ValidBases = new List<ConquestBase>();
                 if (Config.Debug) ServerLogger.WriteStart("Begin Background Grid Scanning (not for points)");
 				foreach (IMyCubeGrid Grid in Grids)
@@ -489,29 +496,29 @@
                     {
                         if (Grid.EntityId == Base.EntityId)
                         {
-                            if (ConqGrid.IsValid && (ConqGrid.Position == Base.Position))
+                            if (ConqGrid.IsValid && (ConqGrid.Position == Base.Position) && (ConqGrid.Radius == Base.Radius))
                             {
+                                Base.DisplayName = Grid.DisplayName;
+                                Base.FactionId = TempFactions.TryGetPlayerFaction(Grid.BigOwners[0]).FactionId;
                                 Base.IsValid = true;
                                 ValidBases.Add(Base);
-                                ValidBasePositions.Add(Base.Position);
                                 IsNewBase = false;
                                 break;
                             }
-                            // base has moved but is now valid
-                            else if ((ConqGrid.IsValid) && (ConqGrid.Position != Base.Position))
+                            // base has moved or radius has changed but is now valid
+                            else if ((ConqGrid.IsValid) && ((ConqGrid.Position != Base.Position) || (ConqGrid.Radius != Base.Radius)))
                             {
-                                BoundingSphereD Sphere = new BoundingSphereD(ConqGrid.Position, Config.ConquerDistance);
+                                BoundingSphereD Sphere = new BoundingSphereD(ConqGrid.Position, ConqGrid.Radius);
                                 List<IMyEntity> Entities = TempEntities.GetEntitiesInSphere(ref Sphere);
                                 int PlanetCount = 0;
                                 int AsteroidCount = 0;
                                 int MoonCount = 0;
-                                List<string> Planetoids = new List<string>();
+                                List<string> Bodies = new List<string>();
                                 foreach (IMyEntity Entity in Entities)
                                 {
                                     if (Entity is MyPlanet)
                                     {
                                         MyPlanet Planet = Entity as MyPlanet;
-                                        Planetoids.Add(Planet.Generator.Id.SubtypeName);
                                         if (Planet.AverageRadius >= Config.PlanetSize)
                                         {
                                             PlanetCount++;
@@ -523,7 +530,6 @@
                                     }
                                     else if (Entity is MyVoxelMap)
                                     {
-                                        Planetoids.Add("Asteroid");
                                         AsteroidCount++;
                                     }
                                 }
@@ -532,35 +538,35 @@
                                 {
                                     AsteroidCount = 0;
                                 }
+                                Base.DisplayName = Grid.DisplayName;
+                                Base.FactionId = TempFactions.TryGetPlayerFaction(Grid.BigOwners[0]).FactionId;
                                 Base.Planets = PlanetCount;
                                 Base.Moons = MoonCount;
                                 Base.Asteroids = AsteroidCount;
                                 Base.Position = ConqGrid.Position;
+                                Base.Radius = ConqGrid.Radius;
                                 Base.IsValid = true;
-                                Base.Planetoids = Planetoids;
                                 Base.IsValidPoints = false;
+                                ValidBases.Add(Base);
                             }
                             else                               
                             {                                
                                 Base.IsValidPoints = false;
-                            }
-                            
+                            }                            
                         }
                     }
                     if (IsNewBase && ConqGrid.IsValid)
                     {
-                        BoundingSphereD Sphere = new BoundingSphereD(ConqGrid.Position, Config.ConquerDistance);
+                        BoundingSphereD Sphere = new BoundingSphereD(ConqGrid.Position, ConqGrid.Radius);
                         List<IMyEntity> Entities = TempEntities.GetEntitiesInSphere(ref Sphere);
                         int PlanetCount = 0;
                         int AsteroidCount = 0;
                         int MoonCount = 0;
-                        List<string> Planetoids = new List<string>();
                         foreach (IMyEntity Entity in Entities)
                         {
                             if (Entity is MyPlanet)
                             {
                                 MyPlanet Planet = Entity as MyPlanet;
-                                Planetoids.Add(Planet.Generator.Id.SubtypeName);
                                 if (Planet.AverageRadius >= Config.PlanetSize)
                                 {
                                     PlanetCount++;
@@ -572,7 +578,6 @@
                             }
                             else if (Entity is MyVoxelMap)
                             {
-                                Planetoids.Add("Asteroid");
                                 AsteroidCount++;
                             }
                         }
@@ -588,11 +593,10 @@
                         NewBase.Planets = PlanetCount;
                         NewBase.Moons = MoonCount;
                         NewBase.Asteroids = AsteroidCount;
+                        NewBase.Radius = ConqGrid.Radius;
                         NewBase.Position = ConqGrid.Position;
                         NewBase.IsValid = true;
-                        NewBase.Planetoids = Planetoids;
                         ValidBases.Add(NewBase);
-                        ValidBasePositions.Add(ConqGrid.Position);
                     }
                 }
 
@@ -602,21 +606,34 @@
 					Faction.PlanetBases = 0;
 					Faction.MoonBases = 0;
 					Faction.AsteroidBases = 0;
-                    if (Config.Persistant)
+                    if (Config.Persistent)
                         Faction.VictoryPoints = 0;
 				}
-                if (Config.Debug) ServerLogger.WriteStart("Grid Scanning Finished, Checking that bases are far enough apart...");
+                if (Config.Debug) ServerLogger.WriteStart("Grid Scanning Finished, Checking that bases are valid...");
 				for (int i=0;i<ValidBases.Count;i++)
 				{
-					foreach (Vector3D Position in ValidBasePositions)
-					{foreach (ConquestExclusionZone ExclusionZone in TempData.ConquestExclusions)
-						if ((ValidBases[i].Position != Position) && (Vector3D.Distance(ValidBases[i].Position, Position) < Config.BaseDistance))
-						{
-                            ValidBases[i].IsValid = false;
-							break;
-						}
+                    if (!ValidBases[i].IsValid)
+                    {
+                        break;
+                    }
+                    foreach (ConquestBase ConqBase in ValidBases)
+					{
+                        // if not the same base
+                        if (ValidBases[i].EntityId != ConqBase.EntityId)
+                        {
+                            // if the distance between these bases is less than the sum of their radii (they are too close together)
+                            if ((ValidBases[i].Radius + ConqBase.Radius) < Vector3D.Distance(ValidBases[i].Position, ConqBase.Position))
+                            {
+                                ValidBases[i].IsValid = false;
+                                ConqBase.IsValid = false;
+                            }
+                        }
 					}
-					foreach (ConquestExclusionZone ExclusionZone in TempData.ConquestExclusions)
+                    if (!ValidBases[i].IsValid)
+                    {
+                        break;
+                    }
+                    foreach (ConquestExclusionZone ExclusionZone in TempData.ConquestExclusions)
 					{
 						if ((Vector3D.Distance(ValidBases[i].Position, ExclusionZone.Position) < ExclusionZone.Radius))
 						{
@@ -624,17 +641,14 @@
 							break;
 						}
 					}
-
-                    if (Instance.Config.AreaReq == true)
+                    if (Config.AreaReq)
                     {
-
-                        TempData.ConquestBases[i].IsValid = false;
-
+                        ValidBases[i].IsValid = false;
                         foreach (ConquestAreaZone AreaZone in TempData.ConquestAreas)
                         {
-                            if ((Vector3D.Distance(TempData.ConquestBases[i].Position, AreaZone.Position) < AreaZone.Radius))
+                            if ((Vector3D.Distance(ValidBases[i].Position, AreaZone.Position) < AreaZone.Radius))
                             {
-                                TempData.ConquestBases[i].IsValid = true;
+                                ValidBases[i].IsValid = true;
                                 break;
                             }
                         }
@@ -659,8 +673,8 @@
 							{
 								Faction.AsteroidBases += 1;
 							}
-                            // set total points to current point value held if in persistant mode
-                            if (Config.Persistant)
+                            // set total points to current point value held if in persistent mode
+                            if (Config.Persistent)
                             {
                                 int NewPoints = ((Base.Asteroids * Config.AsteroidPoints) + (Base.Moons * Config.MoonPoints) + (Base.Planets * Config.PlanetPoints));
                                 Faction.VictoryPoints += NewPoints;                                
@@ -853,7 +867,7 @@
 								}
 								else
 								{
-									MyAPIGateway.Utilities.ShowMessage("Conquest Help", "/conqconfig subcommands: PlanetPoints MoonPoints AsteroidPoints PlanetSize BeaconDistance ConquerDistance UpdateFrequency AssemblerReq RefineryReq CargoReq StaticReq AreaReq Lcds");
+									MyAPIGateway.Utilities.ShowMessage("Conquest Help", "/conqconfig subcommands: PlanetPoints MoonPoints AsteroidPoints PlanetSize BeaconDistance UpdateFrequency AssemblerReq RefineryReq CargoReq StaticReq AreaReq Lcds");
 									return true;
 								}
 						case "conqexclude":
@@ -1103,7 +1117,7 @@
                         if (ConquestScript.Instance.Config.Antenna && FatBlock is IMyRadioAntenna)
                         {
                             IMyRadioAntenna Antenna = FatBlock as IMyRadioAntenna;
-                            if ((Antenna.Radius >= ConquestScript.Instance.Config.BeaconDistance) && (Antenna.IsWorking) && (Antenna.IsBroadcasting))
+                            if ((Math.Ceiling(Antenna.Radius) >= ConquestScript.Instance.Config.BeaconDistance) && (Antenna.IsWorking) && (Antenna.IsBroadcasting))
                             {
                                 if (Antenna.Radius > Radius)
                                 {
@@ -1130,7 +1144,7 @@
                         else if (FatBlock is IMyBeacon)
                         {
                             IMyBeacon Beacon = FatBlock as IMyBeacon;
-                            if ((Beacon.Radius >= ConquestScript.Instance.Config.BeaconDistance) && (Beacon.IsWorking))
+                            if ((Math.Ceiling(Beacon.Radius) >= ConquestScript.Instance.Config.BeaconDistance) && (Beacon.IsWorking))
                             {
                                 if (Beacon.Radius > Radius)
                                 {
@@ -1208,6 +1222,31 @@
                     Reasons.Add("Grid must contain a functional cargo container.");
                 }
                 return false;
+            }
+        }
+
+        internal void AddItem(ConqItem item, float modifier)
+        {
+            foreach (IMyCargoContainer Container in Containers)
+            {
+                var Entity = Container as VRage.Game.Entity.MyEntity;
+                var Inventory = Entity.GetInventory();
+                var ObjectBuilder = new MyObjectBuilder_PhysicalObject();
+                switch (item.TypeId)
+                {
+                    case "Ore":
+                        ObjectBuilder = new MyObjectBuilder_Ore() { SubtypeName = item.SubTypeName };
+                        break;
+
+                    case "Ingot":
+                        ObjectBuilder = new MyObjectBuilder_Ingot() { SubtypeName = item.SubTypeName };
+                        break;
+                }
+                if (Inventory.CanItemsBeAdded((VRage.MyFixedPoint)item.Amount*modifier, ObjectBuilder.GetId()))
+                {
+                    Inventory.AddItems((VRage.MyFixedPoint)item.Amount*modifier, ObjectBuilder);
+                    break;
+                }
             }
         }
     }
