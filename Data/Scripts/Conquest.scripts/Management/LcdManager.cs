@@ -79,7 +79,7 @@
 
             var checkArray = (textPanel.GetPublicTitle() + " " + textPanel.GetPrivateTitle()).Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
             bool showLeaderboard = false;
-            bool showConfig = false;
+            //bool showConfig = false;
 
 
             // removed Linq, to reduce the looping through the array. This should only have to do one loop through all items in the array.
@@ -87,11 +87,11 @@
             {
 				if (str.Equals("Leaderboard", StringComparison.InvariantCultureIgnoreCase))
 					showLeaderboard = true;
-				else if (str.StartsWith("Config", StringComparison.InvariantCultureIgnoreCase))
-					showConfig = true;
+				//else if (str.StartsWith("Config", StringComparison.InvariantCultureIgnoreCase))
+				//	showConfig = true;
             }
 
-            bool showHelp = !showLeaderboard && !showConfig;
+            bool showHelp = !showLeaderboard;
 
             var writer = TextPanelWriter.Create(textPanel);
 
@@ -104,7 +104,7 @@
             if (showHelp)
             {
                 writer.AddPublicLine("Please add a tag to the private or public title.");
-                writer.AddPublicLine("ie., * Leaderboard Config");
+                writer.AddPublicLine("ie., * Leaderboard");
                 writer.UpdatePublic();
                 return;
             }
@@ -185,45 +185,7 @@
 
 
 				
-			}
-
-			if (showConfig)
-			{
-				string Content = "";
-				writer.AddPublicCenterLine(TextPanelWriter.LcdLineWidth / 2f, "Frontier Conquest Config");
-				if (ConquestScript.Instance.Config.PlanetPoints > 0)
-				{
-					Content += string.Format("Points per planetary conquest base: {0}\n", ConquestScript.Instance.Config.PlanetPoints.ToString());
-				} else Content += "Planetary conquest bases are disabled.\n";
-		
-				if (ConquestScript.Instance.Config.MoonPoints > 0)
-				{
-				Content += string.Format("Points per moon conquest base: {0}\n", ConquestScript.Instance.Config.MoonPoints.ToString());
-				} else Content += "Moon conquest bases are disabled.\n";
-				
-				if (ConquestScript.Instance.Config.AsteroidPoints > 0)
-				{
-					Content += string.Format("Points per asteroid conquest base: {0}\n", ConquestScript.Instance.Config.AsteroidPoints.ToString());
-				} else Content += "Asteroid conquest bases are disabled.\n";
-				if (writer.IsWide)
-				{
-					Content += string.Format("Minimum planet radius (smaller is a moon): {0}m ", ConquestScript.Instance.Config.PlanetSize.ToString());
-					Content += string.Format("\nMinimum beacon transmit distance: {0}m\nMinimum distance between conquest bases: {1}m\nConquer distance: {2}m\nUpdate Frequency (Points and new bases): {3} minutes\n",
-						ConquestScript.Instance.Config.BeaconDistance.ToString(), ConquestScript.Instance.Config.BaseDistance.ToString(), ConquestScript.Instance.Config.ConquerDistance.ToString(), ConquestScript.Instance.Config.UpdateFrequency.ToString());
-					Content += string.Format("Assembler required on conquest base: {0}\nRefinery required on conquest base: {1}\nCargo container required on conquest base: {2}\nConquest bases required to be static grid: {3}\nLCD updating: {4}", 
-					FromBool(ConquestScript.Instance.Config.AssemblerReq), FromBool(ConquestScript.Instance.Config.RefineryReq), FromBool(ConquestScript.Instance.Config.CargoReq), FromBool(ConquestScript.Instance.Config.StaticReq), FromBool(ConquestScript.Instance.Config.AreaReq), FromBool(ConquestScript.Instance.Config.EnableLcds));
-				}
-				else
-				{
-				Content += string.Format("Planet Radius: {0}m ", ConquestScript.Instance.Config.PlanetSize.ToString());
-				Content += string.Format("\nBeacon distance: {0}m\nBase distance: {1}m\nConquer distance: {2}m\nUpdate Frequency: {3} minutes\n",
-					ConquestScript.Instance.Config.BeaconDistance.ToString(), ConquestScript.Instance.Config.BaseDistance.ToString(), ConquestScript.Instance.Config.ConquerDistance.ToString(), ConquestScript.Instance.Config.UpdateFrequency.ToString());
-				Content += string.Format("Assembler required: {0}\nRefinery required: {1}\nCargo container required: {2}\nStatic grid required: {3}\nLCD updating: {4}", 
-				FromBool(ConquestScript.Instance.Config.AssemblerReq), FromBool(ConquestScript.Instance.Config.RefineryReq), FromBool(ConquestScript.Instance.Config.CargoReq), FromBool(ConquestScript.Instance.Config.StaticReq), FromBool(ConquestScript.Instance.Config.AreaReq), FromBool(ConquestScript.Instance.Config.EnableLcds));
-				}
-				writer.AddPublicText(Content);
-			}
-			
+			}	
             writer.UpdatePublic();
         }
 		

@@ -46,12 +46,12 @@
             // Only Admin can change config.
             if (!player.IsAdmin())
             {
-                ConquestScript.Instance.ServerLogger.WriteWarning("A Player without Admin \"{0}\" {1} attempted to access Conquest Config.", SenderDisplayName, SenderSteamId);
+                ShowConfig();
                 return;
             }
 
 
-            // These will match with names defined in the RegEx patterm <ConquestScript.Conquest ConfigPattern>
+            // These will match with names defined in the RegEx pattern <ConquestScript.Conquest ConfigPattern>
             switch (ConfigName)
             {
                 #region planetpoints
@@ -174,65 +174,7 @@
                     break;
 
                 #endregion
-
-				#region basedistance
-
-                case "basedistance":
-                    if (string.IsNullOrEmpty(Value))
-                    {
-                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "Minimum distance between conquest bases: {0}", ConquestScript.Instance.Config.BaseDistance.ToString());
-                    }
-                    else
-                    {
-                        int intTest;
-                        if (int.TryParse(Value, out intTest))
-                        {
-                            if (intTest < ConquestScript.Instance.Config.ConquerDistance*2)
-							{
-								MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "Minimum distance between conquest bases needs to be at least 2X the Conquer Distance ({0}m).", (ConquestScript.Instance.Config.ConquerDistance*2).ToString());
-                                return;
-							}
-							else
-                            {
-                                ConquestScript.Instance.Config.BaseDistance = intTest;
-                                MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "Minimum distance between conquest bases updated to: {0}", ConquestScript.Instance.Config.BaseDistance.ToString());
-                                return;
-                            }
-                        }
-                    }
-                    break;
-
-                #endregion
-				
-				#region conquerdistance
-
-                case "conquerdistance":
-                    if (string.IsNullOrEmpty(Value))
-                    {
-                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "Conquer distance for conquest bases: {0}", ConquestScript.Instance.Config.ConquerDistance.ToString());
-                    }
-                    else
-                    {
-                        int intTest;
-                        if (int.TryParse(Value, out intTest))
-                        {
-                            if (intTest > ConquestScript.Instance.Config.BaseDistance/2)
-							{
-								MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "Conquer distance needs to be less than 1/2 the minimum required distance between bases ({0}m).", (ConquestScript.Instance.Config.BaseDistance/2).ToString());
-                                return;
-							}
-							else
-                            {
-                                ConquestScript.Instance.Config.ConquerDistance = intTest;
-                                MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "Conquer distance updated to: {0}", ConquestScript.Instance.Config.ConquerDistance.ToString());
-                                return;
-                            }
-                        }
-                    }
-                    break;
-
-                #endregion
-				
+  							
 				#region updatefrequency
 
                 case "updatefrequency":
@@ -408,23 +350,23 @@
 
                 #endregion
 
-                #region persistant
+                #region persistent
 
-                case "persistant":
+                case "persistent":
                     if (string.IsNullOrEmpty(Value))
-                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "persistance is: {0}", ConquestScript.Instance.Config.Persistant ? "On" : "Off");
+                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "persistence is: {0}", ConquestScript.Instance.Config.Persistent ? "On" : "Off");
                     else
                     {
                         bool? boolTest = GetBool(Value);
                         if (boolTest.HasValue)
                         {
-                            var clearRefresh = ConquestScript.Instance.Config.Persistant && !boolTest.Value;
-                            ConquestScript.Instance.Config.Persistant = boolTest.Value;
-                            MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "persistance changed to: {0}", ConquestScript.Instance.Config.Persistant ? "On" : "Off");
+                            var clearRefresh = ConquestScript.Instance.Config.Persistent && !boolTest.Value;
+                            ConquestScript.Instance.Config.Persistent = boolTest.Value;
+                            MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "persistence changed to: {0}", ConquestScript.Instance.Config.Persistent ? "On" : "Off");
 
                             return;
                         }
-                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "persistance iss: {0}", ConquestScript.Instance.Config.Persistant ? "On" : "Off");
+                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "persistence iss: {0}", ConquestScript.Instance.Config.Persistent ? "On" : "Off");
                     }
                     break;
 
@@ -452,17 +394,68 @@
 
                 #endregion
 
+                #region Reward
+
+                case "reward":
+                    if (string.IsNullOrEmpty(Value))
+                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "conquest rewards are: {0}", ConquestScript.Instance.Config.Reward ? "On" : "Off");
+                    else
+                    {
+                        bool? boolTest = GetBool(Value);
+                        if (boolTest.HasValue)
+                        {
+                            var clearRefresh = ConquestScript.Instance.Config.Reward && !boolTest.Value;
+                            ConquestScript.Instance.Config.Reward = boolTest.Value;
+                            MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "conquest rewards are now: {0}", ConquestScript.Instance.Config.Reward ? "On" : "Off");
+
+                            return;
+                        }
+                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "conquest rewards are: {0}", ConquestScript.Instance.Config.Reward ? "On" : "Off");
+                    }
+                    break;
+
+                #endregion
+
+                #region Debug
+
+                case "debug":
+                    if (string.IsNullOrEmpty(Value))
+                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "conquest debug is: {0}", ConquestScript.Instance.Config.Debug ? "On" : "Off");
+                    else
+                    {
+                        bool? boolTest = GetBool(Value);
+                        if (boolTest.HasValue)
+                        {
+                            var clearRefresh = ConquestScript.Instance.Config.Debug && !boolTest.Value;
+                            ConquestScript.Instance.Config.Debug = boolTest.Value;
+                            MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "conquest debug is now: {0}", ConquestScript.Instance.Config.Debug ? "On" : "Off");
+
+                            return;
+                        }
+                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "conquest debug is: {0}", ConquestScript.Instance.Config.Debug ? "On" : "Off");
+                    }
+                    break;
+
+                #endregion
+
                 default:
-				// No Cases matched!
-				string Content = string.Format("Points per planetary conquest base: {0}\nPoints per moon conquest base: {1}\nPoints per asteroid conquest base: {2}\nMinimum planet radius (smaller is a moon): {3}m ", 
-					ConquestScript.Instance.Config.PlanetPoints.ToString(), ConquestScript.Instance.Config.MoonPoints.ToString(), ConquestScript.Instance.Config.AsteroidPoints.ToString(), ConquestScript.Instance.Config.PlanetSize.ToString());
-				Content += string.Format("\nMinimum beacon transmit distance: {0}m\nMinimum distance between conquest bases: {1}m\nConquer distance: {2}m\nUpdate Frequency (Points and new bases): {3} minutes\n",
-					ConquestScript.Instance.Config.BeaconDistance.ToString(), ConquestScript.Instance.Config.BaseDistance.ToString(), ConquestScript.Instance.Config.ConquerDistance.ToString(), ConquestScript.Instance.Config.UpdateFrequency.ToString());
-				Content += string.Format("Assembler required on conquest base: {0}\nRefinery required on conquest base: {1}\nCargo container required on conquest base: {2}\nConquest bases required to be static grid: {3}\nDesignated Conquest Areas required : {4}\nLCD updating: {5}\nAntenna usage: {6}", 
-				FromBool(ConquestScript.Instance.Config.AssemblerReq), FromBool(ConquestScript.Instance.Config.RefineryReq), FromBool(ConquestScript.Instance.Config.CargoReq), FromBool(ConquestScript.Instance.Config.StaticReq), FromBool(ConquestScript.Instance.Config.AreaReq), FromBool(ConquestScript.Instance.Config.EnableLcds), FromBool(ConquestScript.Instance.Config.Antenna));
-				MessageClientDialogMessage.SendMessage(SenderSteamId, "Frontier Conquest Config", "Configuration options and values", Content);
-				break;
+                    // No Cases matched!
+                    ShowConfig();
+                    break;
             }
+        }
+
+        private void ShowConfig()
+        {
+            string Content = string.Format("Points per planetary conquest base: {0}\nPoints per moon conquest base: {1}\nPoints per asteroid conquest base: {2}\nMinimum planet radius (smaller is a moon): {3}m ",
+            ConquestScript.Instance.Config.PlanetPoints.ToString(), ConquestScript.Instance.Config.MoonPoints.ToString(), ConquestScript.Instance.Config.AsteroidPoints.ToString(), ConquestScript.Instance.Config.PlanetSize.ToString());
+            Content += string.Format("\nMinimum beacon transmit distance: {0}m\nUpdate Frequency (Points and rewards): {1} minutes\n",
+                ConquestScript.Instance.Config.BeaconDistance.ToString(), ConquestScript.Instance.Config.UpdateFrequency.ToString());
+            Content += string.Format("Assembler required on conquest base: {0}\nRefinery required on conquest base: {1}\nCargo container required on conquest base: {2}\nConquest bases required to be static grid: {3}\nDesignated Conquest Areas required : {4}\nLCD updating: {5}\nAntenna usage: {6}",
+            FromBool(ConquestScript.Instance.Config.AssemblerReq), FromBool(ConquestScript.Instance.Config.RefineryReq), FromBool(ConquestScript.Instance.Config.CargoReq), FromBool(ConquestScript.Instance.Config.StaticReq), FromBool(ConquestScript.Instance.Config.AreaReq), FromBool(ConquestScript.Instance.Config.EnableLcds), FromBool(ConquestScript.Instance.Config.Antenna));
+            Content += string.Format("\nPersistent Mode: {0}\nConquest Base Refinery/Assembler Upgrades (NYI): {1}\nConquest Base Rewards: {2}",
+            FromBool(ConquestScript.Instance.Config.Persistent), FromBool(ConquestScript.Instance.Config.Upgrades), FromBool(ConquestScript.Instance.Config.Reward));
+            MessageClientDialogMessage.SendMessage(SenderSteamId, "Frontier Conquest Config", "Configuration options and values", Content);
         }
 
         private bool? GetBool(string value)
