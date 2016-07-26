@@ -694,8 +694,7 @@
                             // set total points to current point value held if in persistent mode
                             if (Config.Persistent)
                             {
-                                int NewPoints = ((Base.Asteroids * Config.AsteroidPoints) + (Base.Moons * Config.MoonPoints) + (Base.Planets * Config.PlanetPoints));
-                                Faction.VictoryPoints += NewPoints;                                
+                                Faction.VictoryPoints = ((Base.Asteroids * Config.AsteroidPoints) + (Base.Moons * Config.MoonPoints) + (Base.Planets * Config.PlanetPoints));
                             }
 						}
 						catch

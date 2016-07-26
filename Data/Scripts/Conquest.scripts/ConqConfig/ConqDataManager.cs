@@ -88,7 +88,7 @@
 
             ConqItem Nickel = new ConqItem { TypeId = "Ingot", SubTypeName = "Nickel", Amount = 750 };
             ConqItem Silicon = new ConqItem { TypeId = "Ingot", SubTypeName = "Silicon", Amount = 650 };
-            ConqItem Cobolt = new ConqItem { TypeId = "Ingot", SubTypeName = "Cobolt", Amount = 425 };
+            ConqItem Cobalt = new ConqItem { TypeId = "Ingot", SubTypeName = "Cobalt", Amount = 425 };
             ConqItem Silver = new ConqItem { TypeId = "Ingot", SubTypeName = "Silver", Amount = 110 };
 
             ConqItem Gold = new ConqItem { TypeId = "Ingot", SubTypeName = "Gold", Amount = 15 };
@@ -106,9 +106,9 @@
             Planet.CommonItems.Add(Silicon);
             Moon.CommonItems.Add(Silicon);
             Asteroid.CommonItems.Add(Silicon);
-            Planet.CommonItems.Add(Cobolt);
-            Moon.CommonItems.Add(Cobolt);
-            Asteroid.CommonItems.Add(Cobolt);
+            Planet.CommonItems.Add(Cobalt);
+            Moon.CommonItems.Add(Cobalt);
+            Asteroid.CommonItems.Add(Cobalt);
             Planet.CommonItems.Add(Silver);
             Moon.CommonItems.Add(Silver);
             Asteroid.CommonItems.Add(Silver);
