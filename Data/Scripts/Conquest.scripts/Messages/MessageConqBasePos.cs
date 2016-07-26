@@ -31,16 +31,19 @@
                     {
                         bool IsValid = true;
                         string Reasons = "";
-                        foreach (ConquestExclusionZone Zone in TempData.ConquestExclusions)
+                        if (TempData.ConquestExclusions.Count > 0)
                         {
-                            if ((Vector3D.Distance(TempPosition, Zone.Position) < Zone.Radius))
+                            foreach (ConquestExclusionZone Zone in TempData.ConquestExclusions)
                             {
-                                Reasons += string.Format("\nwithin exclusion zone: {0}", Zone.DisplayName);
-                                IsValid = false;
+                                if ((Vector3D.Distance(TempPosition, Zone.Position) < Zone.Radius))
+                                {
+                                    Reasons += string.Format("\nwithin exclusion zone: {0}", Zone.DisplayName);
+                                    IsValid = false;
+                                }
                             }
-                        }                        
+                        }                     
                         bool boAR = false;
-                        if (ConquestScript.Instance.Config.AreaReq)
+                        if ((ConquestScript.Instance.Config.AreaReq) && (TempData.ConquestAreas.Count > 0))
                         {
                             foreach (ConquestAreaZone Zone in TempData.ConquestAreas)
                             {
@@ -55,15 +58,18 @@
                             {
                                 Reasons += "\n is not within a Conquest Area";
                             }
-                        }                        
-                        foreach (ConquestBase ConqBase in TempData.ConquestBases)
-                        {
-                            if (Vector3D.Distance(TempPosition, ConqBase.Position) < ConqBase.Radius)
-                            {
-                                Reasons += string.Format("\nwithin broadcast range of Conquest Base: {0}", ConqBase.DisplayName);
-                                IsValid = false;
-                            }
                         }
+                        if (TempData.ConquestBases.Count > 0)
+                        {
+                            foreach (ConquestBase ConqBase in TempData.ConquestBases)
+                            {
+                                if (Vector3D.Distance(TempPosition, ConqBase.Position) < ConqBase.Radius)
+                                {
+                                    Reasons += string.Format("\nwithin broadcast range of Conquest Base: {0}", ConqBase.DisplayName);
+                                    IsValid = false;
+                                }
+                            }
+                        }  
                         if (IsValid)
                         {
                             MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Base", "This is a valid position for a conquest base");                            
@@ -83,7 +89,6 @@
             else
             {
                 MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Base", "Server busy, try again later.");
-                ConquestScript.Instance.DataLock.ReleaseExclusive();
             }
         }
         public static void SendMessage( Vector3D tempPosition)

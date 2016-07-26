@@ -41,16 +41,19 @@
                             MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Base", "Error: Could not retrieve IMyCubeGrid, are you looking at a block with a terminal?");
                             return;
                         }
-                        foreach (ConquestExclusionZone Zone in TempData.ConquestExclusions)
+                        if (TempData.ConquestExclusions.Count > 0)
                         {
-                            if ((Vector3D.Distance(SelectedGrid.GetPosition(), Zone.Position) < Zone.Radius))
+                            foreach (ConquestExclusionZone Zone in TempData.ConquestExclusions)
                             {
-                                Reasons += string.Format("\n {0} is within exclusion zone: {1}", SelectedGrid.DisplayName, Zone.DisplayName);
-                                IsValid = false;
+                                if ((Vector3D.Distance(SelectedGrid.GetPosition(), Zone.Position) < Zone.Radius))
+                                {
+                                    Reasons += string.Format("\n {0} is within exclusion zone: {1}", SelectedGrid.DisplayName, Zone.DisplayName);
+                                    IsValid = false;
+                                }
                             }
                         }
                         bool boAR = false;
-                        if (ConquestScript.Instance.Config.AreaReq)
+                        if ((ConquestScript.Instance.Config.AreaReq) && (TempData.ConquestAreas.Count > 0))
                         {
                             foreach (ConquestAreaZone Zone in TempData.ConquestAreas)
                             {
@@ -68,23 +71,26 @@
                             }
                         }
                         ConquestGrid ConqGrid = new ConquestGrid(SelectedGrid);
-                        foreach (ConquestBase ConqBase in TempData.ConquestBases)
+                        if (TempData.ConquestBases.Count > 0)
                         {
-                            // If this isn't the same grid...
-                            if (SelectedGrid.EntityId != ConqBase.EntityId)
+                            foreach (ConquestBase ConqBase in TempData.ConquestBases)
                             {
-                                if (Vector3D.Distance(SelectedGrid.GetPosition(), ConqBase.Position) < ConqBase.Radius)
+                                // If this isn't the same grid...
+                                if (SelectedGrid.EntityId != ConqBase.EntityId)
                                 {
-                                    Reasons += string.Format("\n {0} is within broadcast range of Conquest Base: {1}", SelectedGrid.DisplayName, ConqBase.DisplayName);
-                                    IsValid = false;
-                                }
-                                if (Vector3D.Distance(ConqGrid.Position, ConqBase.Position) < ConqGrid.Radius)
-                                {
-                                    Reasons += string.Format("\n Conquest Base {0} is within broadcast range", ConqBase.DisplayName);
-                                    IsValid = false;
+                                    if (Vector3D.Distance(SelectedGrid.GetPosition(), ConqBase.Position) < ConqBase.Radius)
+                                    {
+                                        Reasons += string.Format("\n {0} is within broadcast range of Conquest Base: {1}", SelectedGrid.DisplayName, ConqBase.DisplayName);
+                                        IsValid = false;
+                                    }
+                                    if (Vector3D.Distance(ConqGrid.Position, ConqBase.Position) < ConqGrid.Radius)
+                                    {
+                                        Reasons += string.Format("\n Conquest Base {0} is within broadcast range", ConqBase.DisplayName);
+                                        IsValid = false;
+                                    }
                                 }
                             }
-                        }                        
+                        }                                               
                         if (ConqGrid.IsValid && IsValid)
                         {
                             //MyAPIGateway.Utilities.ShowMessage("ConquestBase", SelectedBlock.CubeGrid.DisplayName + " Is a valid Conquest Base!");
@@ -119,7 +125,6 @@
             else
             {
                 MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Base", "Server busy, try again later.");
-                ConquestScript.Instance.DataLock.ReleaseExclusive();
             }
         }
         

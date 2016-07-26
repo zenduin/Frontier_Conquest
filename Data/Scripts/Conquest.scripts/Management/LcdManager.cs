@@ -104,7 +104,7 @@
             if (showHelp)
             {
                 writer.AddPublicLine("Please add a tag to the private or public title.");
-                writer.AddPublicLine("ie., * Leaderboard Config");
+                writer.AddPublicLine("ie., * Leaderboard");
                 writer.UpdatePublic();
                 return;
             }

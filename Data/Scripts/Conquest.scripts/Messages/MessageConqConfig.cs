@@ -354,7 +354,7 @@
 
                 case "persistent":
                     if (string.IsNullOrEmpty(Value))
-                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "persistance is: {0}", ConquestScript.Instance.Config.Persistent ? "On" : "Off");
+                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "persistence is: {0}", ConquestScript.Instance.Config.Persistent ? "On" : "Off");
                     else
                     {
                         bool? boolTest = GetBool(Value);
@@ -362,11 +362,11 @@
                         {
                             var clearRefresh = ConquestScript.Instance.Config.Persistent && !boolTest.Value;
                             ConquestScript.Instance.Config.Persistent = boolTest.Value;
-                            MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "persistance changed to: {0}", ConquestScript.Instance.Config.Persistent ? "On" : "Off");
+                            MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "persistence changed to: {0}", ConquestScript.Instance.Config.Persistent ? "On" : "Off");
 
                             return;
                         }
-                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "persistance iss: {0}", ConquestScript.Instance.Config.Persistent ? "On" : "Off");
+                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "persistence iss: {0}", ConquestScript.Instance.Config.Persistent ? "On" : "Off");
                     }
                     break;
 
@@ -394,6 +394,50 @@
 
                 #endregion
 
+                #region Reward
+
+                case "reward":
+                    if (string.IsNullOrEmpty(Value))
+                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "conquest rewards are: {0}", ConquestScript.Instance.Config.Reward ? "On" : "Off");
+                    else
+                    {
+                        bool? boolTest = GetBool(Value);
+                        if (boolTest.HasValue)
+                        {
+                            var clearRefresh = ConquestScript.Instance.Config.Reward && !boolTest.Value;
+                            ConquestScript.Instance.Config.Reward = boolTest.Value;
+                            MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "conquest rewards are now: {0}", ConquestScript.Instance.Config.Reward ? "On" : "Off");
+
+                            return;
+                        }
+                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "conquest rewards are: {0}", ConquestScript.Instance.Config.Reward ? "On" : "Off");
+                    }
+                    break;
+
+                #endregion
+
+                #region Debug
+
+                case "debug":
+                    if (string.IsNullOrEmpty(Value))
+                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "conquest debug is: {0}", ConquestScript.Instance.Config.Debug ? "On" : "Off");
+                    else
+                    {
+                        bool? boolTest = GetBool(Value);
+                        if (boolTest.HasValue)
+                        {
+                            var clearRefresh = ConquestScript.Instance.Config.Debug && !boolTest.Value;
+                            ConquestScript.Instance.Config.Debug = boolTest.Value;
+                            MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "conquest debug is now: {0}", ConquestScript.Instance.Config.Debug ? "On" : "Off");
+
+                            return;
+                        }
+                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "conquest debug is: {0}", ConquestScript.Instance.Config.Debug ? "On" : "Off");
+                    }
+                    break;
+
+                #endregion
+
                 default:
                     // No Cases matched!
                     ShowConfig();
@@ -409,6 +453,8 @@
                 ConquestScript.Instance.Config.BeaconDistance.ToString(), ConquestScript.Instance.Config.UpdateFrequency.ToString());
             Content += string.Format("Assembler required on conquest base: {0}\nRefinery required on conquest base: {1}\nCargo container required on conquest base: {2}\nConquest bases required to be static grid: {3}\nDesignated Conquest Areas required : {4}\nLCD updating: {5}\nAntenna usage: {6}",
             FromBool(ConquestScript.Instance.Config.AssemblerReq), FromBool(ConquestScript.Instance.Config.RefineryReq), FromBool(ConquestScript.Instance.Config.CargoReq), FromBool(ConquestScript.Instance.Config.StaticReq), FromBool(ConquestScript.Instance.Config.AreaReq), FromBool(ConquestScript.Instance.Config.EnableLcds), FromBool(ConquestScript.Instance.Config.Antenna));
+            Content += string.Format("\nPersistent Mode: {0}\nConquest Base Refinery/Assembler Upgrades (NYI): {1}\nConquest Base Rewards: {2}",
+            FromBool(ConquestScript.Instance.Config.Persistent), FromBool(ConquestScript.Instance.Config.Upgrades), FromBool(ConquestScript.Instance.Config.Reward));
             MessageClientDialogMessage.SendMessage(SenderSteamId, "Frontier Conquest Config", "Configuration options and values", Content);
         }
 

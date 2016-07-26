@@ -10,7 +10,7 @@
 
     public static class ConqDataManager
     {
-		#region Load and save CONFIG
+        #region Load and save CONFIG
 
         public static string GetConfigFilename()
         {
@@ -58,22 +58,74 @@
         {
             ConquestScript.Instance.ServerLogger.WriteInfo("Creating new ConqConfigStruct.");
             ConqConfigStruct Config = new ConqConfigStruct();
+            Config.Bodies = InitBodies();
 			Config.PlanetPoints = 5;
 			Config.MoonPoints = 3;
 			Config.AsteroidPoints = 1;
 			Config.PlanetSize = 25000;
-			Config.BeaconDistance = 50000;
+			Config.BeaconDistance = 1000;
 			Config.AssemblerReq = true;
 			Config.RefineryReq = true;
 			Config.CargoReq = true;
 			Config.StaticReq = true;	
 			Config.EnableLcds = true;
-			Config.UpdateFrequency = 60;
+			Config.UpdateFrequency = 30;
             Config.Antenna = true;
-            Config.AreaReq = true;
-            Config.Persistent = false;
+            Config.AreaReq = false;
+            Config.Persistent = true;
             Config.Upgrades = true;
             return Config;
+        }
+
+        public static List<ConqBody> InitBodies()
+        {
+            List<ConqBody> Bodies = new List<ConqBody>();
+            ConqBody Planet = new ConqBody { Type = "Planet", DefaultItems = new List<ConqItem>(), CommonItems = new List<ConqItem>(), RareItems = new List<ConqItem>() };
+            ConqBody Moon = new ConqBody { Type = "Moon", DefaultItems = new List<ConqItem>(), CommonItems = new List<ConqItem>(), RareItems = new List<ConqItem>() };
+            ConqBody Asteroid = new ConqBody { Type = "Asteroid", DefaultItems = new List<ConqItem>(), CommonItems = new List<ConqItem>(), RareItems = new List<ConqItem>() }; 
+
+            ConqItem Iron = new ConqItem { TypeId = "Ingot", SubTypeName = "Iron", Amount =  2500};
+
+            ConqItem Nickel = new ConqItem { TypeId = "Ingot", SubTypeName = "Nickel", Amount = 750 };
+            ConqItem Silicon = new ConqItem { TypeId = "Ingot", SubTypeName = "Silicon", Amount = 650 };
+            ConqItem Cobolt = new ConqItem { TypeId = "Ingot", SubTypeName = "Cobolt", Amount = 425 };
+            ConqItem Silver = new ConqItem { TypeId = "Ingot", SubTypeName = "Silver", Amount = 110 };
+
+            ConqItem Gold = new ConqItem { TypeId = "Ingot", SubTypeName = "Gold", Amount = 15 };
+            ConqItem Magnesium = new ConqItem { TypeId = "Ingot", SubTypeName = "Magnesium", Amount = 5 };
+            ConqItem Uranium = new ConqItem { TypeId = "Ingot", SubTypeName = "Uranium", Amount = 5 };
+            ConqItem Platinum = new ConqItem { TypeId = "Ingot", SubTypeName = "Uranium", Amount = 3 };
+
+            Planet.DefaultItems.Add(Iron);
+            Moon.DefaultItems.Add(Iron);
+            Asteroid.DefaultItems.Add(Iron);
+
+            Planet.CommonItems.Add(Nickel);
+            Moon.CommonItems.Add(Nickel);
+            Asteroid.CommonItems.Add(Nickel);
+            Planet.CommonItems.Add(Silicon);
+            Moon.CommonItems.Add(Silicon);
+            Asteroid.CommonItems.Add(Silicon);
+            Planet.CommonItems.Add(Cobolt);
+            Moon.CommonItems.Add(Cobolt);
+            Asteroid.CommonItems.Add(Cobolt);
+            Planet.CommonItems.Add(Silver);
+            Moon.CommonItems.Add(Silver);
+            Asteroid.CommonItems.Add(Silver);
+
+            Planet.RareItems.Add(Gold);
+            Moon.RareItems.Add(Gold);
+            Asteroid.RareItems.Add(Gold);
+            Planet.RareItems.Add(Magnesium);
+            Moon.RareItems.Add(Magnesium);
+            Asteroid.RareItems.Add(Magnesium);
+            Planet.RareItems.Add(Uranium);
+            Moon.RareItems.Add(Uranium);
+            Asteroid.RareItems.Add(Uranium);
+            Planet.RareItems.Add(Platinum);
+            Moon.RareItems.Add(Platinum);
+            Asteroid.RareItems.Add(Platinum);
+            return Bodies;
         }
 
         public static void SaveConfig(ConqConfigStruct Config)
