@@ -94,7 +94,7 @@
             ConqItem Gold = new ConqItem { TypeId = "Ingot", SubTypeName = "Gold", Amount = 15 };
             ConqItem Magnesium = new ConqItem { TypeId = "Ingot", SubTypeName = "Magnesium", Amount = 5 };
             ConqItem Uranium = new ConqItem { TypeId = "Ingot", SubTypeName = "Uranium", Amount = 5 };
-            ConqItem Platinum = new ConqItem { TypeId = "Ingot", SubTypeName = "Uranium", Amount = 3 };
+            ConqItem Platinum = new ConqItem { TypeId = "Ingot", SubTypeName = "Platinum", Amount = 3 };
 
             Planet.DefaultItems.Add(Iron);
             Moon.DefaultItems.Add(Iron);
@@ -125,6 +125,9 @@
             Planet.RareItems.Add(Platinum);
             Moon.RareItems.Add(Platinum);
             Asteroid.RareItems.Add(Platinum);
+            Bodies.Add(Planet);
+            Bodies.Add(Moon);
+            Bodies.Add(Asteroid);
             return Bodies;
         }
 

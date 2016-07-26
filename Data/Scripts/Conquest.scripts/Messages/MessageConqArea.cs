@@ -147,6 +147,10 @@
                                 }
                                 MessageClientDialogMessage.SendMessage(SenderSteamId, "Conquest Area Zone List", " ", str.ToString());
                             }
+                            else
+                            {
+                                MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Area List", "List is currently empty.");
+                            }
                         }
                         break;
                 }
