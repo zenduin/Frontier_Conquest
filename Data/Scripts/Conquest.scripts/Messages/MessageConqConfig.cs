@@ -151,7 +151,7 @@
                 case "beacondistance":
                     if (string.IsNullOrEmpty(Value))
                     {
-                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "Required beacon broadcast distance: {0}", ConquestScript.Instance.Config.BeaconDistance.ToString());
+                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "Required beacon/antenna broadcast distance: {0}", ConquestScript.Instance.Config.BeaconDistance.ToString());
                     }
                     else
                     {
@@ -160,13 +160,13 @@
                         {
                             if (intTest>50000)
 							{
-								MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "Maximum broadcast radius for beacons is 50000m");
+								MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "Maximum broadcast radius for beacons/antennas is 50000m");
                                 return;
 							}
 							else
                             {
                                 ConquestScript.Instance.Config.BeaconDistance = intTest;
-                                MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "Required beacon broadcast distance updated to: {0}", ConquestScript.Instance.Config.BeaconDistance.ToString());
+                                MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "Required beacon/antenna broadcast distance updated to: {0}", ConquestScript.Instance.Config.BeaconDistance.ToString());
                                 return;
                             }
                         }
@@ -416,6 +416,62 @@
 
                 #endregion
 
+                #region MaxBonusTime
+
+                case "maxbonustime":
+                    if (string.IsNullOrEmpty(Value))
+                    {
+                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "Maximum Bonus Time is {0} minutes", ConquestScript.Instance.Config.MaxBonusTime.ToString());
+                    }
+                    else
+                    {
+                        int intTest;
+                        if (int.TryParse(Value, out intTest))
+                        {
+                            ConquestScript.Instance.Config.MaxBonusTime = intTest;
+                            MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "Maximum Bonus Time updated to: {0} minutes", ConquestScript.Instance.Config.MaxBonusTime.ToString());
+                            return;
+                        }
+                    }
+                    break;
+
+                #endregion
+
+                #region maxbonusmod
+
+                case "maxbonusmod":
+                    if (string.IsNullOrEmpty(Value))
+                    {
+                        if (ConquestScript.Instance.Config.MaxBonusMod > 1)
+                        {
+                            MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "Maximum Bonus Modifier is {0} (Time modifier is enabled)", ConquestScript.Instance.Config.MaxBonusMod.ToString());
+                        }
+                        else
+                        {
+                            MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "Maximum Bonus Modifier is {0} (Time modifier is disabled)", ConquestScript.Instance.Config.MaxBonusMod.ToString());
+                        }
+                    }
+                    else
+                    {
+                        int intTest;
+                        if (int.TryParse(Value, out intTest))
+                        {
+                            ConquestScript.Instance.Config.MaxBonusMod = intTest;
+                            if (intTest > 1)
+                            {
+                                MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "Maximum Bonus Modifier updated to: {0} (Time modifier is enabled)", ConquestScript.Instance.Config.MaxBonusMod.ToString());
+                            }
+                            else
+                            {
+                                MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Config", "Maximum Bonus Modifier updated to: {0} (Time modifier is disabled)", ConquestScript.Instance.Config.MaxBonusMod.ToString());
+                            }
+                            return;
+                        }
+                    }
+                    break;
+
+                #endregion
+    
                 #region Debug
 
                 case "debug":
@@ -453,8 +509,8 @@
                 ConquestScript.Instance.Config.BeaconDistance.ToString(), ConquestScript.Instance.Config.UpdateFrequency.ToString());
             Content += string.Format("Assembler required on conquest base: {0}\nRefinery required on conquest base: {1}\nCargo container required on conquest base: {2}\nConquest bases required to be static grid: {3}\nDesignated Conquest Areas required : {4}\nLCD updating: {5}\nAntenna usage: {6}",
             FromBool(ConquestScript.Instance.Config.AssemblerReq), FromBool(ConquestScript.Instance.Config.RefineryReq), FromBool(ConquestScript.Instance.Config.CargoReq), FromBool(ConquestScript.Instance.Config.StaticReq), FromBool(ConquestScript.Instance.Config.AreaReq), FromBool(ConquestScript.Instance.Config.EnableLcds), FromBool(ConquestScript.Instance.Config.Antenna));
-            Content += string.Format("\nPersistent Mode: {0}\nConquest Base Refinery/Assembler Upgrades (NYI): {1}\nConquest Base Rewards: {2}",
-            FromBool(ConquestScript.Instance.Config.Persistent), FromBool(ConquestScript.Instance.Config.Upgrades), FromBool(ConquestScript.Instance.Config.Reward));
+            Content += string.Format("\nPersistent Mode: {0}\nConquest Base Refinery/Assembler Upgrades (NYI): {1}\nConquest Base Rewards: {2}\nMaximum Bonus Time: {3} minutes\nMaximum Bonus Modifier: {4}",
+            FromBool(ConquestScript.Instance.Config.Persistent), FromBool(ConquestScript.Instance.Config.Upgrades), FromBool(ConquestScript.Instance.Config.Reward), ConquestScript.Instance.Config.MaxBonusTime.ToString(), ConquestScript.Instance.Config.MaxBonusMod.ToString());
             MessageClientDialogMessage.SendMessage(SenderSteamId, "Frontier Conquest Config", "Configuration options and values", Content);
         }
 

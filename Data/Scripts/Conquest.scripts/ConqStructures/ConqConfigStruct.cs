@@ -40,7 +40,11 @@
 
         public bool Upgrades { get; set; }
         
-        public bool Reward { get; set; }	
+        public bool Reward { get; set; }
+        
+        public int MaxBonusTime { get; set; }
+        
+        public int MaxBonusMod { get; set; }	
 
         public bool Debug { get; set; }
     }

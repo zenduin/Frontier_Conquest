@@ -75,86 +75,95 @@
         {
             if (ConquestScript.Instance.DataLock.TryAcquireExclusive())
             {
-                var player = MyAPIGateway.Players.FindPlayerBySteamId(SenderSteamId);
-                if (player == null || !player.IsAdmin()) // hold on there, are we an admin first?
-                    return;
-                switch (CommandType)
+                try
                 {
-                    case AreaManage.Add:
-                        {
-                            if (string.IsNullOrWhiteSpace(ZoneName) || ZoneName == "*")
+                    var player = MyAPIGateway.Players.FindPlayerBySteamId(SenderSteamId);
+                    if (player == null || !player.IsAdmin()) // hold on there, are we an admin first?
+                        return;
+                    switch (CommandType)
+                    {
+                        case AreaManage.Add:
                             {
-                                MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Area Add", "Invalid name supplied for the zone name.");
-                                ConquestScript.Instance.DataLock.ReleaseExclusive();
-                                return;
-                            }
-
-                            var checkZone = ConquestScript.Instance.Data.ConquestAreas.FirstOrDefault(m => m.DisplayName.Equals(ZoneName, StringComparison.InvariantCultureIgnoreCase));
-                            if (checkZone != null)
-                            {
-                                MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Area Add", "A conquest Area zone of name '{0}' already exists.", checkZone.DisplayName);
-                                ConquestScript.Instance.DataLock.ReleaseExclusive();
-                                return;
-                            }
-
-                            ConquestAreaZone NewZone = new ConquestAreaZone();
-                            NewZone.DisplayName = ZoneName;
-                            NewZone.Position = new Vector3D(X, Y, Z);
-                            NewZone.Radius = Size;
-                            ConquestScript.Instance.Data.ConquestAreas.Add(NewZone);
-                            MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Area Add", "A new conquest Area zone called '{0}' has been created.", ZoneName);
-                        }
-                        break;
-                    case AreaManage.Remove:
-                        {
-                            var zone = ConquestScript.Instance.Data.ConquestAreas.FirstOrDefault(m => m.DisplayName.Equals(ZoneName, StringComparison.InvariantCultureIgnoreCase));
-                            if (zone == null)
-                            {
-                                var zones = ConquestScript.Instance.Data.ConquestAreas.Where(m => m.DisplayName.IndexOf(ZoneName, StringComparison.InvariantCultureIgnoreCase) >= 0).ToArray();
-                                if (zones.Length == 0)
+                                if (string.IsNullOrWhiteSpace(ZoneName) || ZoneName == "*")
                                 {
-                                    MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Area Remove", "The specified zone name could not be found.");
+                                    MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Area Add", "Invalid name supplied for the zone name.");
                                     ConquestScript.Instance.DataLock.ReleaseExclusive();
                                     return;
                                 }
-                                if (zones.Length > 1)
+
+                                var checkZone = ConquestScript.Instance.Data.ConquestAreas.FirstOrDefault(m => m.DisplayName.Equals(ZoneName, StringComparison.InvariantCultureIgnoreCase));
+                                if (checkZone != null)
                                 {
-                                    var str = new StringBuilder();
-                                    str.Append("The specified zone name could not be found.\r\n    Which did you mean?\r\n");
-                                    foreach (var m in zones)
-                                        str.AppendLine(m.DisplayName);
-                                    MessageClientDialogMessage.SendMessage(SenderSteamId, "Conquest Area Remove", " ", str.ToString());
+                                    MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Area Add", "A conquest Area zone of name '{0}' already exists.", checkZone.DisplayName);
                                     ConquestScript.Instance.DataLock.ReleaseExclusive();
                                     return;
                                 }
-                                zone = zones[0];
+
+                                ConquestAreaZone NewZone = new ConquestAreaZone();
+                                NewZone.DisplayName = ZoneName;
+                                NewZone.Position = new Vector3D(X, Y, Z);
+                                NewZone.Radius = Size;
+                                ConquestScript.Instance.Data.ConquestAreas.Add(NewZone);
+                                MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Area Add", "A new conquest Area zone called '{0}' has been created.", ZoneName);
                             }
-
-                            ConquestScript.Instance.Data.ConquestAreas.Remove(zone);
-                            MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Area Remove", "The zone '{0}' has been removed.", zone.DisplayName);
-                        }
-                        break;
-                    case AreaManage.List:
-                        {
-                            var str = new StringBuilder();
-
-                            if (ConquestScript.Instance.Data.ConquestAreas.Count > 0)
+                            break;
+                        case AreaManage.Remove:
                             {
-                                foreach (var zone in ConquestScript.Instance.Data.ConquestAreas)
+                                var zone = ConquestScript.Instance.Data.ConquestAreas.FirstOrDefault(m => m.DisplayName.Equals(ZoneName, StringComparison.InvariantCultureIgnoreCase));
+                                if (zone == null)
                                 {
-                                    str.AppendFormat("Zone: {0}\r\n", zone.DisplayName);
-                                    str.AppendFormat("  Center Position=X:{0:N} | Y:{1:N} | Z:{2:N} Radius={3:N}m\r\n\r\n", zone.Position.X.ToString(), zone.Position.Y.ToString(), zone.Position.Z.ToString(), zone.Radius.ToString());
+                                    var zones = ConquestScript.Instance.Data.ConquestAreas.Where(m => m.DisplayName.IndexOf(ZoneName, StringComparison.InvariantCultureIgnoreCase) >= 0).ToArray();
+                                    if (zones.Length == 0)
+                                    {
+                                        MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Area Remove", "The specified zone name could not be found.");
+                                        ConquestScript.Instance.DataLock.ReleaseExclusive();
+                                        return;
+                                    }
+                                    if (zones.Length > 1)
+                                    {
+                                        var str = new StringBuilder();
+                                        str.Append("The specified zone name could not be found.\r\n    Which did you mean?\r\n");
+                                        foreach (var m in zones)
+                                            str.AppendLine(m.DisplayName);
+                                        MessageClientDialogMessage.SendMessage(SenderSteamId, "Conquest Area Remove", " ", str.ToString());
+                                        ConquestScript.Instance.DataLock.ReleaseExclusive();
+                                        return;
+                                    }
+                                    zone = zones[0];
                                 }
-                                MessageClientDialogMessage.SendMessage(SenderSteamId, "Conquest Area Zone List", " ", str.ToString());
+
+                                ConquestScript.Instance.Data.ConquestAreas.Remove(zone);
+                                MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Area Remove", "The zone '{0}' has been removed.", zone.DisplayName);
                             }
-                            else
+                            break;
+                        case AreaManage.List:
                             {
-                                MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Area List", "List is currently empty.");
+                                var str = new StringBuilder();
+
+                                if (ConquestScript.Instance.Data.ConquestAreas.Count > 0)
+                                {
+                                    foreach (var zone in ConquestScript.Instance.Data.ConquestAreas)
+                                    {
+                                        str.AppendFormat("Zone: {0}\r\n", zone.DisplayName);
+                                        str.AppendFormat("  Center Position=X:{0:N} | Y:{1:N} | Z:{2:N} Radius={3:N}m\r\n\r\n", zone.Position.X.ToString(), zone.Position.Y.ToString(), zone.Position.Z.ToString(), zone.Radius.ToString());
+                                    }
+                                    MessageClientDialogMessage.SendMessage(SenderSteamId, "Conquest Area Zone List", " ", str.ToString());
+                                }
+                                else
+                                {
+                                    MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Area List", "List is currently empty.");
+                                }
                             }
-                        }
-                        break;
+                            break;
+                    }
+                    ConquestScript.Instance.DataLock.ReleaseExclusive();
                 }
-                ConquestScript.Instance.DataLock.ReleaseExclusive();
+                catch (Exception ex)
+                {
+                    ConquestScript.Instance.ServerLogger.WriteException(ex);
+                    MyAPIGateway.Utilities.ShowMessage("Error", "An exception has been logged in the file:" + ConquestScript.Instance.ServerLogger.LogFileName);
+                    ConquestScript.Instance.DataLock.ReleaseExclusive();
+                }
             }
             else
             {

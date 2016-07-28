@@ -21,6 +21,8 @@
 		public int Moons { get; set; }
 				
 		public int Asteroids { get; set; }
+
+        public DateTime Established { get; set; }
 		
 		public Vector3D Position { get; set; }
 		

@@ -72,8 +72,11 @@
 			Config.UpdateFrequency = 30;
             Config.Antenna = true;
             Config.AreaReq = false;
-            Config.Persistent = true;
+            Config.Persistent = false;
+            Config.MaxBonusTime = 1440;
+            Config.MaxBonusMod = 0;
             Config.Upgrades = true;
+            Config.Reward = false;
             return Config;
         }
 
@@ -193,6 +196,8 @@
             ConqDataStruct data = new ConqDataStruct();
 			data.ConquestFactions = new List<ConquestFaction>();
 			data.ConquestBases = new List<ConquestBase>();
+            data.ConquestAreas = new List<ConquestAreaZone>();
+            data.ConquestExclusions = new List<ConquestExclusionZone>();
 			data.LastRun = MyAPIGateway.Session.GameDateTime;
             return data;
         }

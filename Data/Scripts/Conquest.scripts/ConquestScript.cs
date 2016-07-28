@@ -32,7 +32,7 @@
     [MySessionComponentDescriptor(MyUpdateOrder.AfterSimulation)]
 	public class ConquestScript : MySessionComponentBase
 	{		
-		const string ConquestConfigPattern = @"^(?<command>/conqconfig)(?:\s+(?<config>((PlanetPoints)|(MoonPoints)|(AsteroidPoints)|(PlanetSize)|(BeaconDistance)|(UpdateFrequency)|(AssemblerReq)|(RefineryReq)|(CargoReq)|(StaticReq)|(AreaReq)|(Lcds)|(Antenna)|(Persistent)|(Upgrades)|(Reward)|(Debug)))(?:\s+(?<value>.+))?)?";
+		const string ConquestConfigPattern = @"^(?<command>/conqconfig)(?:\s+(?<config>((PlanetPoints)|(MoonPoints)|(AsteroidPoints)|(PlanetSize)|(BeaconDistance)|(UpdateFrequency)|(AssemblerReq)|(RefineryReq)|(CargoReq)|(StaticReq)|(AreaReq)|(Lcds)|(Antenna)|(Persistent)|(Upgrades)|(Reward)|(MaxBonusTime)|(MaxBonusMod)|(Debug)))(?:\s+(?<value>.+))?)?";
 	    const string ConquestExcludeAddPattern = @"(?<command>/conqexclude)\s+((add)|(create))\s+(?:(?:""(?<name>[^""]|.*?)"")|(?<name>[^\s]*))\s+(?<X>[+-]?((\d+(\.\d*)?)|(\.\d+)))\s+(?<Y>[+-]?((\d+(\.\d*)?)|(\.\d+)))\s+(?<Z>[+-]?((\d+(\.\d*)?)|(\.\d+)))\s+(?<Size>(\d+(\.\d*)?))";
         const string ConquestExcludeDeletePattern = @"(?<command>/conqexclude)\s+((del)|(delete)|(remove))\s+(?:(?:""(?<name>[^""]|.*?)"")|(?<name>.*))";
         const string ConquestAreaAddPattern = @"(?<command>/conqarea)\s+((add)|(create))\s+(?:(?:""(?<name>[^""]|.*?)"")|(?<name>[^\s]*))\s+(?<X>[+-]?((\d+(\.\d*)?)|(\.\d+)))\s+(?<Y>[+-]?((\d+(\.\d*)?)|(\.\d+)))\s+(?<Z>[+-]?((\d+(\.\d*)?)|(\.\d+)))\s+(?<Size>(\d+(\.\d*)?))";
@@ -353,13 +353,35 @@
                 ConqDataStruct TempData = Data;
                 DataLock.ReleaseExclusive();
                 ServerLogger.WriteStart("UpdateTimer Released Data Lock. START");
-				foreach (ConquestBase Base in TempData.ConquestBases)
+                if (Config.Persistent)
+                {
+                    foreach (ConquestFaction Faction in TempData.ConquestFactions)
+                    {
+                        Faction.VictoryPoints = 0;
+                    }
+                }                   
+                foreach (ConquestBase Base in TempData.ConquestBases)
 				{
 					if (Base.IsValid && Base.IsValidPoints) 
-					{
+					{                        
                         ConquestFaction Faction = TempData.ConquestFactions.Find(x => x.FactionId == Base.FactionId);
                         int InitialPoints = Faction.VictoryPoints;
-                        int NewPoints = ((Base.Asteroids * Config.AsteroidPoints) + (Base.Moons * Config.MoonPoints) + (Base.Planets * Config.PlanetPoints));                        
+                        double PointMod = 1;
+                        if (Config.MaxBonusMod > 1)
+                        {
+                            // time in minutes this base has survived
+                            double TimeAlive = MyAPIGateway.Session.GameDateTime.Subtract(Base.Established).TotalMinutes;
+                            if (TimeAlive > Config.MaxBonusTime)
+                            {
+                                PointMod = Config.MaxBonusMod;
+                            }
+                            else
+                            {
+                                // gets a modifier with min 1 and max Config.MaxBonusMod
+                                PointMod = (TimeAlive / Config.MaxBonusTime) * (Config.MaxBonusMod - 1) + 1;
+                            }
+                        }
+                        int NewPoints = ((Base.Asteroids * Config.AsteroidPoints) + (Base.Moons * Config.MoonPoints) + (Base.Planets * Config.PlanetPoints)) * (int)PointMod;                        
                         if (Config.Reward)
                         {
                             ConquestGrid ConqGrid = new ConquestGrid((IMyCubeGrid)MyAPIGateway.Entities.GetEntityById(Base.EntityId));
@@ -368,17 +390,39 @@
                             if (Base.Planets>0)
                             {
                                 ConqBody Body = Config.Bodies.FirstOrDefault(x => x.Type == "Planet");
-                                Reward(ConqGrid, Body, Base.Planets * Config.PlanetPoints * (Base.Radius / 50000));
+                                Reward(ConqGrid, Body, Base.Planets * Config.PlanetPoints * (Base.Radius / 50000) * (float)PointMod);
                             }
                             if (Base.Moons > 0)
                             {
                                 ConqBody Body = Config.Bodies.FirstOrDefault(x => x.Type == "Moon");
-                                Reward(ConqGrid, Body, Base.Moons * Config.MoonPoints * (Base.Radius / 50000));
+                                Reward(ConqGrid, Body, Base.Moons * Config.MoonPoints * (Base.Radius / 50000) * (float)PointMod);
                             }
                             if (Base.Asteroids > 0)
                             {
                                 ConqBody Body = Config.Bodies.FirstOrDefault(x => x.Type == "Asteroid");
-                                Reward(ConqGrid, Body, Base.Asteroids * Config.AsteroidPoints * (Base.Radius / 50000));
+                                Reward(ConqGrid, Body, Base.Asteroids * Config.AsteroidPoints * (Base.Radius / 50000) * (float)PointMod);
+                            }
+                        }
+                        if (Config.Upgrades)
+                        {
+                            try
+                            {
+                                IMyCubeGrid Grid = MyAPIGateway.Entities.GetEntityById(Base.EntityId) as IMyCubeGrid;
+                                List<IMySlimBlock> Blocks = new List<IMySlimBlock>();
+                                Grid.GetBlocks(Blocks);
+                                foreach (IMySlimBlock SBlock in Blocks)
+                                {
+                                    IMyCubeBlock Block = SBlock.FatBlock;
+                                    if ((Block is IMyRefinery) || (Block is IMyAssembler))
+                                    {
+                                        Block.AddUpgradeValue("ConquestProductivity", (float)PointMod);
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                ConquestScript.Instance.ServerLogger.WriteException(ex);
+                                MyAPIGateway.Utilities.ShowMessage("Error", "An exception has been logged in the file: " + ConquestScript.Instance.ServerLogger.LogFileName);
                             }
                         }                                                 
                         Faction.VictoryPoints += NewPoints;
@@ -452,8 +496,8 @@
 			IMyEntities TempEntities = MyAPIGateway.Entities;
 			HashSet<IMyEntity> Grids = new HashSet<IMyEntity>();
 			MyAPIGateway.Entities.GetEntities(Grids, x => x is IMyCubeGrid);
-			
-			MyAPIGateway.Parallel.Start(delegate ()
+
+            MyAPIGateway.Parallel.Start(delegate ()
             // Background processing occurs within this block.
             {
                 if (Config.Debug) ServerLogger.WriteStart("Timer30 Parallel task started");
@@ -557,6 +601,7 @@
                                     Base.Radius = ConqGrid.Radius;
                                     Base.IsValid = true;
                                     Base.IsValidPoints = false;
+                                    Base.Established = MyAPIGateway.Session.GameDateTime;
                                     IsNewBase = false;
                                     ValidBases.Add(Base);
                                 }
@@ -609,6 +654,7 @@
                             NewBase.Radius = ConqGrid.Radius;
                             NewBase.Position = ConqGrid.Position;
                             NewBase.IsValid = true;
+                            NewBase.Established = MyAPIGateway.Session.GameDateTime;
                             ValidBases.Add(NewBase);
                         }
                     }                    
@@ -620,8 +666,6 @@
 					Faction.PlanetBases = 0;
 					Faction.MoonBases = 0;
 					Faction.AsteroidBases = 0;
-                    if (Config.Persistent)
-                        Faction.VictoryPoints = 0;
 				}
                 if (Config.Debug) ServerLogger.WriteStart("Grid Scanning Finished, Checking that bases are valid...");
 				for (int i=0;i<ValidBases.Count;i++)
@@ -691,11 +735,6 @@
 							{
 								Faction.AsteroidBases += 1;
 							}
-                            // set total points to current point value held if in persistent mode
-                            if (Config.Persistent)
-                            {
-                                Faction.VictoryPoints = ((Base.Asteroids * Config.AsteroidPoints) + (Base.Moons * Config.MoonPoints) + (Base.Planets * Config.PlanetPoints));
-                            }
 						}
 						catch
 						{

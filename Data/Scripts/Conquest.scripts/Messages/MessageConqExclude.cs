@@ -73,9 +73,9 @@
 
         public override void ProcessServer()
         {
-            try
+            if (ConquestScript.Instance.DataLock.TryAcquireExclusive())
             {
-                if (ConquestScript.Instance.DataLock.TryAcquireExclusive())
+                try
                 {
                     var player = MyAPIGateway.Players.FindPlayerBySteamId(SenderSteamId);
                     if (player == null || !player.IsAdmin()) // hold on there, are we an admin first?
@@ -155,16 +155,16 @@
                     }
                     ConquestScript.Instance.DataLock.ReleaseExclusive();
                 }
-                else
+                catch (Exception ex)
                 {
-                    MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Exclude", "Server busy, try again later.");
-                }
+                    ConquestScript.Instance.ServerLogger.WriteException(ex);
+                    MyAPIGateway.Utilities.ShowMessage("Error", "An exception has been logged in the file:" + ConquestScript.Instance.ServerLogger.LogFileName);
+                    ConquestScript.Instance.DataLock.ReleaseExclusive();
+                }                    
             }
-            catch (Exception ex)
+            else
             {
-                ConquestScript.Instance.ServerLogger.WriteException(ex);
-                MyAPIGateway.Utilities.ShowMessage("Error", "An exception has been logged in the file: " + ConquestScript.Instance.ServerLogger.LogFileName);
-                ConquestScript.Instance.DataLock.ReleaseExclusive();
+                MessageClientTextMessage.SendMessage(SenderSteamId, "Conquest Exclude", "Server busy, try again later.");
             }
         }
     }
